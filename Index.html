@@ -1,0 +1,3849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Stats Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --panel: #111318;
+    --card: #161b24;
+    --border: #1e2533;
+    --accent: #00e5a0;
+    --accent2: #ff4d6d;
+    --accent3: #ffd166;
+    --accent4: #4cc9f0;
+    --text: #e8eaf0;
+    --muted: #5a6278;
+    --sidebar: 260px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== SKIP LINK (ACESSIBILIDADE) ===== */
+  .skip-link {
+    position: absolute; top: -40px; left: 0;
+    background: var(--accent); color: #000;
+    padding: 8px 16px; z-index: 9999;
+    font-weight: 700; font-size: 14px;
+    border-radius: 0 0 8px 0;
+    transition: top 0.2s;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ===== SIDEBAR ===== */
+  #sidebar {
+    width: var(--sidebar);
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 200;
+  }
+
+  /* ===== MOBILE OVERLAY ===== */
+  #sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+    backdrop-filter: blur(2px);
+  }
+  #sidebar-overlay.active { display: block; }
+
+  /* ===== HAMBURGER ===== */
+  #menu-toggle {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  #menu-toggle:hover { background: var(--border); }
+  #menu-toggle:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .sidebar-header { padding: 28px 22px 20px; border-bottom: 1px solid var(--border); }
+
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--accent); line-height: 1; }
+  .logo span { color: var(--text); }
+  .sub { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .nav-section { padding: 18px 14px 10px; }
+  .nav-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 0 8px; margin-bottom: 8px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 3px; font-size: 14px; font-weight: 500;
+    color: var(--accent3); border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--card); color: #fff; }
+  .nav-item.active { background: rgba(255,209,102,0.08); color: var(--accent3); border-color: rgba(255,209,102,0.3); }
+  .nav-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+
+  .badge { margin-left: auto; background: var(--border); font-size: 10px; padding: 2px 7px; border-radius: 20px; color: var(--muted); font-weight: 600; }
+  .nav-item.active .badge { background: rgba(255,209,102,0.15); color: var(--accent3); }
+
+  /* ===== MAIN ===== */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* topbar now defined in responsive section */
+
+  .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text); }
+  .topbar-title span { color: var(--accent); }
+  .meta-pills { display: flex; gap: 10px; }
+  .pill { background: var(--card); border: 1px solid var(--border); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  .pill strong { color: var(--text); }
+
+  #content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* ===== SECTION HEADER ===== */
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .section-icon { font-size: 32px; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; color: var(--text); line-height: 1; }
+  .section-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* ===== STAT GRID ===== */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 28px; }
+
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+    transition: transform 0.2s, border-color 0.2s; animation: fadeUp 0.4s ease both;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: rgba(0,229,160,0.3); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card-match { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .score-badge { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 6px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; margin-left: auto; }
+
+  .teams-row { display: flex; align-items: stretch; gap: 6px; margin-bottom: 10px; }
+  .team-block { flex: 1; text-align: center; background: var(--panel); border-radius: 8px; padding: 8px 6px; }
+  .team-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .team-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; }
+  .team-val.home { color: var(--accent4); }
+  .team-val.away { color: var(--accent2); }
+  .vs-sep { display: flex; align-items: center; color: var(--muted); font-size: 12px; font-weight: 700; }
+
+  .sub-stats { display: flex; gap: 6px; }
+  .sub-stat { flex: 1; background: var(--panel); border-radius: 6px; padding: 5px; text-align: center; }
+  .sub-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .sub-val { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  /* ===== RANKING TABLE ===== */
+  .ranking-section { margin-bottom: 10px; }
+  .ranking-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  .ranking-table { width: 100%; border-collapse: collapse; }
+  .ranking-table th { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  .ranking-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid rgba(30,37,51,0.6); }
+  .ranking-table tr:last-child td { border-bottom: none; }
+  .ranking-table tbody tr { transition: background 0.15s; animation: fadeUp 0.3s ease both; cursor: pointer; }
+  .ranking-table tbody tr:hover { background: rgba(0,229,160,0.04); }
+  .ranking-table tbody tr.team-selected { background: rgba(0,229,160,0.07); }
+
+  .rank-pos { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); width: 30px; }
+  .rank-pos.gold { color: var(--accent3); }
+  .rank-pos.silver { color: #9ea5b8; }
+  .rank-pos.bronze { color: #c97d4e; }
+
+  .rank-team-btn {
+    background: none; border: none; color: var(--text); font-weight: 600; font-size: 13px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; text-align: left; padding: 0;
+    transition: color 0.15s; display: flex; align-items: center; gap: 8px;
+  }
+  .rank-team-btn:hover { color: var(--accent); }
+  .click-hint { font-size: 10px; color: var(--muted); opacity: 0; transition: opacity 0.15s; }
+  .ranking-table tbody tr:hover .click-hint { opacity: 1; }
+  .ranking-table tbody tr.team-selected .rank-team-btn { color: var(--accent); }
+
+  .bar-wrap { position: relative; height: 6px; background: var(--border); border-radius: 3px; width: 120px; overflow: hidden; }
+  .bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .rank-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; text-align: right; }
+
+  /* ===== TEAM DETAIL PANEL ===== */
+  .team-detail-panel {
+    margin-top: 16px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(0,229,160,0.25);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .tdp-header {
+    background: linear-gradient(135deg, rgba(0,229,160,0.09), rgba(0,229,160,0.03));
+    border-bottom: 1px solid rgba(0,229,160,0.18);
+    padding: 16px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .tdp-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 3px; color: var(--accent); }
+  .tdp-team-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tdp-meta { display: flex; gap: 8px; align-items: center; }
+
+  .tdp-tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }
+  .tdp-tag.win { background: rgba(0,229,160,0.08); color: var(--accent); border-color: rgba(0,229,160,0.25); }
+  .tdp-tag.draw { background: rgba(255,209,102,0.08); color: var(--accent3); border-color: rgba(255,209,102,0.25); }
+  .tdp-tag.loss { background: rgba(255,77,109,0.08); color: var(--accent2); border-color: rgba(255,77,109,0.25); }
+
+  .tdp-close {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted);
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-left: 8px;
+  }
+  .tdp-close:hover { background: rgba(255,77,109,0.12); color: var(--accent2); border-color: rgba(255,77,109,0.3); }
+
+  .tdp-summary {
+    display: flex; gap: 0;
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tdp-stat {
+    flex: 1; padding: 14px 22px; display: flex; flex-direction: column; gap: 3px;
+    border-right: 1px solid var(--border);
+  }
+  .tdp-stat:last-child { border-right: none; }
+  .tdp-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .tdp-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; }
+
+  .tdp-body { padding: 20px 22px; }
+  .tdp-games-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  .tdp-game-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px; animation: fadeUp 0.3s ease both;
+    transition: border-color 0.2s;
+  }
+  .tdp-game-row:hover { border-color: rgba(0,229,160,0.3); }
+
+  .tdp-role { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 5px; min-width: 56px; text-align: center; border: 1px solid transparent; flex-shrink: 0; }
+  .tdp-role.casa { background: rgba(76,201,240,0.1); color: var(--accent4); border-color: rgba(76,201,240,0.25); }
+  .tdp-role.vis { background: rgba(255,77,109,0.1); color: var(--accent2); border-color: rgba(255,77,109,0.25); }
+
+  .tdp-game-name { font-weight: 600; font-size: 13px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tdp-game-score { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--accent3); min-width: 44px; text-align: center; }
+
+  .tdp-game-stats { display: flex; gap: 2px; margin-left: auto; }
+  .tdp-gs { text-align: center; padding: 4px 10px; background: var(--panel); border-radius: 6px; }
+  .tdp-gs-label { font-size: 9px; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 2px; }
+  .tdp-gs-val { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--text); }
+
+  /* ===== OVERVIEW ===== */
+  .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .ov-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; animation: fadeUp 0.4s ease both; }
+  .ov-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .ov-val { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; }
+  .ov-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .c-green { color: var(--accent); }
+  .c-red { color: var(--accent2); }
+  .c-yellow { color: var(--accent3); }
+  .c-blue { color: var(--accent4); }
+
+  /* ===== HIDDEN ===== */
+  .view { display: none; }
+  .view.active { display: block; }
+  .divider { height: 1px; background: var(--border); margin: 22px 0; }
+  .all-games-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* ===== C10 FILTER BUTTONS ===== */
+  .c10-filter-btn {
+    background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.35); color: var(--accent3);
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .c10-filter-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); color: #fff; }
+  .c10-filter-btn.active { background: rgba(255,209,102,0.18); border-color: var(--accent3); color: var(--accent3); box-shadow: 0 0 8px rgba(255,209,102,0.15); }
+
+  /* C10 match card custom */
+  .c10-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; transition: transform 0.2s, border-color 0.2s; animation: fadeUp 0.4s ease both;
+    cursor: default;
+  }
+  .c10-card:hover { transform: translateY(-2px); border-color: rgba(76,201,240,0.3); }
+  .c10-card.has2 { border-left: 3px solid var(--accent4); }
+  .c10-card.zero { border-left: 3px solid var(--border); opacity: 0.7; }
+
+  .c10-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .c10-card-match { font-size:13px; font-weight:600; color:var(--text); }
+  .c10-card-score { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--accent3); }
+
+  .c10-teams { display:flex; gap:6px; margin-bottom:10px; }
+  .c10-team { flex:1; background:var(--panel); border-radius:8px; padding:10px 8px; text-align:center; position:relative; }
+  .c10-team-name { font-size:10px; color:var(--muted); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .c10-team-val { font-family:'Bebas Neue',sans-serif; font-size:34px; line-height:1; }
+  .c10-team-val.home { color:var(--accent4); }
+  .c10-team-val.away { color:var(--accent2); }
+  .c10-team-val.zero-v { color:var(--muted); }
+  .c10-team-label { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-top:3px; }
+
+  .c10-total-badge {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--panel); border-radius:8px; padding:7px 10px;
+    font-size:12px; color:var(--muted);
+  }
+  .c10-total-num { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--accent4); }
+  .c10-total-num.zero-t { color:var(--muted); }
+  .c10-alert { font-size:10px; color:var(--accent4); font-weight:700; margin-top:6px; text-align:center; letter-spacing:1px; }
+
+  /* ===== CARTÕES CARDS ===== */
+  .card-match-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; transition: transform 0.2s, border-color 0.2s; animation: fadeUp 0.4s ease both;
+  }
+  .card-match-card:hover { transform: translateY(-2px); border-color: rgba(255,77,109,0.3); }
+  .card-match-card.has-red { border-left: 3px solid var(--accent2); }
+
+  .cmc-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .cmc-match { font-size:13px; font-weight:600; color:var(--text); }
+  .cmc-score { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--accent3); }
+  .cmc-period-badge {
+    font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    padding:2px 8px; border-radius:5px; background:rgba(255,77,109,0.1);
+    color:var(--accent2); border:1px solid rgba(255,77,109,0.25);
+  }
+
+  .cmc-teams { display:flex; gap:6px; margin-bottom:10px; }
+  .cmc-team { flex:1; background:var(--panel); border-radius:8px; padding:10px 8px; text-align:center; }
+  .cmc-team-name { font-size:10px; color:var(--muted); margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .cmc-cards-row { display:flex; gap:4px; justify-content:center; align-items:flex-end; }
+  .cmc-card-pill {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:var(--bg); border-radius:6px; padding:6px 10px; min-width:36px;
+  }
+  .cmc-card-pill .num { font-family:'Bebas Neue',sans-serif; font-size:26px; line-height:1; }
+  .cmc-card-pill .lbl { font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+  .cmc-card-pill.yellow .num { color:var(--accent3); }
+  .cmc-card-pill.red    .num { color:var(--accent2); }
+  .cmc-card-pill.zero   .num { color:var(--muted); }
+
+  .cmc-sep { display:flex; align-items:center; color:var(--muted); font-size:11px; font-weight:700; padding:0 2px; }
+
+  .cmc-total-row { display:flex; gap:8px; margin-top:2px; }
+  .cmc-total-pill {
+    flex:1; background:var(--panel); border-radius:7px; padding:6px 8px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .cmc-total-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .cmc-total-val { font-family:'Bebas Neue',sans-serif; font-size:18px; }
+  .cmc-total-val.yellow { color:var(--accent3); }
+  .cmc-total-val.red    { color:var(--accent2); }
+
+  /* ===== FINALIZAÇÕES CARDS ===== */
+  .fin-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; transition: transform 0.2s, border-color 0.2s; animation: fadeUp 0.4s ease both;
+  }
+  .fin-card:hover { transform: translateY(-2px); border-color: rgba(255,209,102,0.35); }
+  .fin-card.team-highlighted { border-color: var(--accent3); box-shadow: 0 0 0 1px rgba(255,209,102,0.3); }
+
+  .fin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; }
+  .fin-match  { font-size:13px; font-weight:600; color:var(--text); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fin-score  { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--accent3); flex-shrink:0; }
+
+  .fin-period-badge {
+    font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; flex-shrink:0;
+    padding:2px 8px; border-radius:5px; background:rgba(255,209,102,0.1);
+    color:var(--accent3); border:1px solid rgba(255,209,102,0.25);
+  }
+  .fin-period-badge.fora { background:rgba(90,98,120,0.15); color:var(--muted); border-color:var(--border); }
+
+  .fin-teams { display:flex; gap:6px; }
+  .fin-team  { flex:1; background:var(--panel); border-radius:8px; padding:10px 8px; text-align:center; }
+  .fin-team.active-team { background:rgba(255,209,102,0.06); border:1px solid rgba(255,209,102,0.2); }
+  .fin-team-name { font-size:10px; color:var(--muted); margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fin-team-val  { font-family:'Bebas Neue',sans-serif; font-size:32px; line-height:1; }
+  .fin-team-val.on   { color:var(--accent3); }
+  .fin-team-val.off  { color:var(--muted); }
+  .fin-team-val.home-on  { color:var(--accent4); }
+  .fin-team-val.away-on  { color:var(--accent2); }
+  .fin-team-sub  { font-size:9px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-top:3px; }
+
+  /* ===== INSIGHTS PANEL ===== */
+  .insights-panel {
+    background: linear-gradient(135deg, rgba(255,209,102,0.06), rgba(255,209,102,0.02));
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .insights-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+  }
+  .insights-header:hover { background: rgba(255,209,102,0.04); }
+
+  .insights-icon { font-size: 28px; flex-shrink: 0; }
+
+  .insights-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--accent3);
+    line-height: 1;
+  }
+  .insights-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .insights-toggle {
+    margin-left: auto;
+    background: rgba(255,209,102,0.1);
+    border: 1px solid rgba(255,209,102,0.3);
+    color: var(--accent3);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .insights-toggle:hover { background: rgba(255,209,102,0.2); color: #fff; }
+
+  .insights-body {
+    border-top: 1px solid rgba(255,209,102,0.15);
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+  }
+
+  .insight-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: fadeUp 0.3s ease both;
+    transition: border-color 0.2s;
+  }
+  .insight-card:hover { border-color: rgba(255,209,102,0.35); }
+
+  .insight-emoji { font-size: 22px; flex-shrink: 0; line-height: 1.3; }
+
+  .insight-content { flex: 1; }
+  .insight-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  .insight-tag.bate      { background: rgba(0,229,160,0.12);  color: var(--accent);  border: 1px solid rgba(0,229,160,0.3); }
+  .insight-tag.sofre     { background: rgba(255,77,109,0.12);  color: var(--accent2); border: 1px solid rgba(255,77,109,0.3); }
+  .insight-tag.nao-bate  { background: rgba(90,98,120,0.2);    color: var(--muted);   border: 1px solid var(--border); }
+  .insight-tag.nao-sofre { background: rgba(76,201,240,0.12);  color: var(--accent4); border: 1px solid rgba(76,201,240,0.3); }
+  .insight-tag.ouro      { background: rgba(255,209,102,0.18); color: var(--accent3); border: 1px solid rgba(255,209,102,0.5); }
+
+  .insight-card.is-ouro {
+    border-color: rgba(255,209,102,0.5) !important;
+    background: linear-gradient(135deg, rgba(255,209,102,0.07), var(--card));
+    box-shadow: 0 0 12px rgba(255,209,102,0.1);
+  }
+  .insight-card.is-ouro .insight-pct { color: var(--accent3) !important; }
+  .ouro-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 4px; margin-left: 6px;
+    background: rgba(255,209,102,0.18); color: var(--accent3);
+    border: 1px solid rgba(255,209,102,0.45);
+    vertical-align: middle;
+  }
+  .cant-ouro-active {
+    background: rgba(255,209,102,0.25) !important;
+    border-color: var(--accent3) !important;
+    color: #fff !important;
+    box-shadow: 0 0 8px rgba(255,209,102,0.2);
+  }
+  .insight-card.hidden-by-ouro { display: none; }
+
+  .insight-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .insight-text strong { color: var(--accent3); }
+
+  .insight-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+    margin-top: 6px;
+    color: var(--accent3);
+  }
+  .insight-pct span { font-size: 13px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; margin-left: 4px; }
+
+  .insights-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+  }
+  .liga-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px 8px;
+  }
+  .liga-selector-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding-right: 4px;
+    border-right: 1px solid var(--border);
+    margin-right: 2px;
+  }
+  .liga-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .liga-btn:hover { background: var(--panel); color: var(--text); }
+  .liga-btn.active {
+    background: rgba(0,229,160,0.1);
+    border-color: rgba(0,229,160,0.3);
+    color: var(--accent);
+  }
+
+  /* ===== SEARCH FILTER ===== */
+  .search-wrap {
+    padding: 12px 14px 4px;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px 9px 36px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .search-input:focus { border-color: rgba(0,229,160,0.4); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-wrap-inner { position: relative; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+  /* ===== FOCUS OUTLINES (ACESSIBILIDADE) ===== */
+  .nav-item:focus,
+  .liga-btn:focus,
+  .c10-filter-btn:focus,
+  .rank-team-btn:focus,
+  .insights-toggle:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ===== TOPBAR IMPROVEMENTS ===== */
+  #topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  /* ===== MOBILE FILTER SCROLL ===== */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-scroll {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .filter-scroll::-webkit-scrollbar { display: none; }
+  .filter-scroll .c10-filter-btn { flex-shrink: 0; }
+
+  /* ===== OVERVIEW GRID RESPONSIVE ===== */
+  .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+  /* ===== RANKING TABLE RESPONSIVE ===== */
+  .bar-wrap { position: relative; height: 6px; background: var(--border); border-radius: 3px; width: 80px; overflow: hidden; }
+
+  /* ===== TDP RESPONSIVE ===== */
+  .tdp-summary { display: flex; gap: 0; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tdp-stat { flex: 1; padding: 12px 16px; min-width: 80px; }
+
+  /* ===== MOBILE BREAKPOINT ===== */
+  @media (max-width: 768px) {
+    body { overflow: hidden; }
+
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      transform: translateX(-100%);
+      width: 280px;
+      box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #menu-toggle { display: flex; }
+
+    #main { width: 100%; }
+
+    #topbar { padding: 10px 14px; gap: 8px; }
+    .topbar-title { font-size: 17px; flex: 1; min-width: 0; }
+    .topbar-right { gap: 6px; justify-content: flex-start; width: 100%; }
+    .meta-pills { display: none; }
+
+    .liga-selector {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      scrollbar-width: none;
+    }
+    .liga-selector::-webkit-scrollbar { display: none; }
+
+    #content { padding: 14px; }
+
+    .overview-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    .stat-grid { grid-template-columns: 1fr !important; gap: 10px; }
+
+    .section-title { font-size: 28px; }
+
+    /* Ranking table — hide bar column on mobile */
+    .ranking-table th:nth-child(3),
+    .ranking-table td:nth-child(3) { display: none; }
+    .bar-wrap { display: none; }
+    .ranking-table td, .ranking-table th { padding: 9px 8px; }
+
+    /* TDP on mobile */
+    .tdp-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .tdp-meta { flex-wrap: wrap; }
+    .tdp-game-row { flex-wrap: wrap; gap: 8px; }
+    .tdp-game-stats { flex-wrap: wrap; gap: 4px; margin-left: 0; }
+    .tdp-game-name { font-size: 12px; }
+    .tdp-summary { flex-wrap: wrap; }
+    .tdp-stat { min-width: 80px; flex: 1 1 80px; }
+
+    /* Fin / Cards / C10 cards on mobile */
+    .fin-teams, .cmc-teams, .c10-teams { gap: 4px; }
+    .fin-team-val { font-size: 26px; }
+    .c10-team-val { font-size: 28px; }
+    .cmc-card-pill .num { font-size: 22px; }
+
+    /* Insights grid */
+    .insights-body { grid-template-columns: 1fr; }
+    #cant-insights-list > div { grid-template-columns: 1fr !important; }
+
+    /* Filter buttons scroll */
+    .filter-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .filter-row::-webkit-scrollbar { display: none; }
+
+    /* Topbar filters in a scroll row */
+    .liga-btn { font-size: 11px; padding: 4px 10px; }
+  }
+
+  /* ===== SCOUT STYLES ===== */
+  .scout-team-header {
+    background: linear-gradient(135deg, rgba(0,229,160,0.1), rgba(0,229,160,0.03));
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .scout-team-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .scout-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .scout-summary-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .scout-pill {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; font-size: 12px;
+  }
+  .scout-pill strong { color: var(--text); }
+
+  .scout-category {
+    margin-bottom: 28px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .scout-cat-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scout-cat-count {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .scout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+  }
+
+  .scout-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: border-color 0.2s, transform 0.15s;
+    animation: fadeUp 0.3s ease both;
+  }
+  .scout-card:hover { transform: translateY(-1px); }
+  .scout-card.conf-high   { border-left: 3px solid var(--accent);  }
+  .scout-card.conf-mid    { border-left: 3px solid var(--accent3); }
+  .scout-card.conf-low    { border-left: 3px solid var(--accent4); }
+
+  .scout-pct-circle {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    line-height: 1;
+    border: 2px solid;
+  }
+  .scout-pct-circle.conf-high { background: rgba(0,229,160,0.1);  color: var(--accent);  border-color: rgba(0,229,160,0.4); }
+  .scout-pct-circle.conf-mid  { background: rgba(255,209,102,0.1);color: var(--accent3); border-color: rgba(255,209,102,0.4); }
+  .scout-pct-circle.conf-low  { background: rgba(76,201,240,0.1); color: var(--accent4); border-color: rgba(76,201,240,0.4); }
+
+  .scout-card-body { flex: 1; min-width: 0; }
+  .scout-card-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+    display: inline-block; margin-bottom: 6px;
+  }
+  .scout-card-label.casa  { background: rgba(76,201,240,0.12);  color: var(--accent4); border: 1px solid rgba(76,201,240,0.3); }
+  .scout-card-label.fora  { background: rgba(255,77,109,0.12);   color: var(--accent2); border: 1px solid rgba(255,77,109,0.3); }
+  .scout-card-text { font-size: 13px; color: var(--text); line-height: 1.45; }
+  .scout-card-text strong { color: var(--accent3); }
+  .scout-card-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .scout-empty-cat {
+    grid-column: 1/-1; text-align: center;
+    color: var(--muted); font-size: 13px; padding: 16px;
+  }
+
+  .scout-dropdown-item {
+    padding: 11px 16px; cursor: pointer; font-size: 13px;
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .scout-dropdown-item:last-child { border-bottom: none; }
+  .scout-dropdown-item:hover { background: rgba(0,229,160,0.06); }
+  .scout-dropdown-badge { font-size: 10px; color: var(--muted); margin-left: auto; }
+
+  @media (max-width: 768px) {
+    .scout-grid { grid-template-columns: 1fr; }
+    .scout-team-name { font-size: 30px; }
+    .scout-pct-circle { width: 46px; height: 46px; font-size: 15px; }
+  }
+
+  /* ===== MATCH ANALYZER ===== */
+  .ma-team-selector {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    gap: 16px; align-items: end; margin-bottom: 20px;
+  }
+  .ma-vs {
+    font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+    color: var(--accent3); text-align: center; letter-spacing: 2px; padding-bottom: 4px;
+  }
+  .ma-team-wrap { position: relative; }
+  .ma-team-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .ma-team-input {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px 16px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; outline: none; transition: border-color 0.2s;
+  }
+  .ma-team-input::placeholder { color: var(--muted); font-weight: 400; }
+  .ma-team-input.home:focus { border-color: rgba(76,201,240,0.5); }
+  .ma-team-input.away:focus { border-color: rgba(255,77,109,0.5); }
+  .ma-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    z-index: 200; max-height: 220px; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .ma-dropdown-item {
+    padding: 10px 16px; cursor: pointer; font-size: 13px;
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+  }
+  .ma-dropdown-item:last-child { border-bottom: none; }
+  .ma-dropdown-item:hover { background: rgba(255,209,102,0.06); }
+
+  .ma-analyze-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, rgba(255,209,102,0.2), rgba(255,209,102,0.06));
+    border: 1px solid rgba(255,209,102,0.4); border-radius: 12px;
+    color: var(--accent3); font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 3px; cursor: pointer; transition: all 0.2s; margin-bottom: 28px;
+  }
+  .ma-analyze-btn:hover { background: rgba(255,209,102,0.25); transform: translateY(-1px); }
+  .ma-analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .ma-match-banner {
+    background: linear-gradient(135deg, rgba(255,209,102,0.08), rgba(255,209,102,0.02));
+    border: 1px solid rgba(255,209,102,0.3); border-radius: 16px; padding: 20px 24px;
+    margin-bottom: 24px; animation: fadeUp 0.4s ease both;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  }
+  .ma-banner-teams { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ma-banner-home { color: var(--accent4); }
+  .ma-banner-away { color: var(--accent2); }
+  .ma-banner-vs   { color: var(--accent3); font-size: 20px; }
+  .ma-banner-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ma-banner-pill { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--muted); }
+  .ma-banner-pill strong { color: var(--text); }
+
+  .ma-market-section { margin-bottom: 28px; }
+  .ma-market-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px;
+    color: var(--muted); margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+  }
+  .ma-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+
+  .ma-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; animation: fadeUp 0.3s ease both;
+    transition: transform 0.15s, border-color 0.2s; display: flex; flex-direction: column; gap: 8px;
+  }
+  .ma-card:hover { transform: translateY(-2px); }
+  .ma-card.hot    { border-color: rgba(0,229,160,0.45);  background: linear-gradient(135deg,rgba(0,229,160,0.08),var(--card)); }
+  .ma-card.warm   { border-color: rgba(255,209,102,0.4); background: linear-gradient(135deg,rgba(255,209,102,0.06),var(--card)); }
+  .ma-card.cold   { border-color: rgba(90,98,120,0.4); opacity: 0.75; }
+  .ma-card.danger { border-color: rgba(255,77,109,0.4);  background: linear-gradient(135deg,rgba(255,77,109,0.06),var(--card)); }
+
+  .ma-card-market { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .ma-card-line   { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--text); }
+  .ma-card-prob   { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; }
+  .ma-card-prob.hot    { color: var(--accent); }
+  .ma-card-prob.warm   { color: var(--accent3); }
+  .ma-card-prob.cold   { color: var(--muted); }
+  .ma-card-prob.danger { color: var(--accent2); }
+
+  .ma-card-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .ma-card-bar-fill { height: 100%; border-radius: 3px; }
+  .ma-card-detail { font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .ma-card-detail span { color: var(--text); font-weight: 600; }
+  .ma-card-badge {
+    display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+  }
+  .ma-card-badge.over  { background: rgba(0,229,160,0.15);  color: var(--accent);  border: 1px solid rgba(0,229,160,0.3); }
+  .ma-card-badge.under { background: rgba(255,77,109,0.12);  color: var(--accent2); border: 1px solid rgba(255,77,109,0.3); }
+  .ma-card-badge.btts  { background: rgba(255,209,102,0.15); color: var(--accent3); border: 1px solid rgba(255,209,102,0.3); }
+
+  .ma-team-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .ma-team-stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; animation: fadeUp 0.4s ease both; }
+  .ma-team-stat-title { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .ma-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(30,37,51,0.5); font-size: 12px; }
+  .ma-stat-row:last-child { border-bottom: none; }
+  .ma-stat-label { color: var(--muted); }
+  .ma-stat-val   { font-weight: 700; color: var(--text); font-family: 'Bebas Neue', sans-serif; font-size: 16px; }
+
+  @media (max-width: 768px) {
+    .ma-team-selector { grid-template-columns: 1fr; gap: 10px; }
+    .ma-vs { display: none; }
+    .ma-grid { grid-template-columns: 1fr 1fr; }
+    .ma-team-stats-grid { grid-template-columns: 1fr; }
+    .ma-banner-teams { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#content" class="skip-link">Pular para o conteúdo</a>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebar-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar" role="navigation" aria-label="Menu principal">
+  <div class="sidebar-header">
+    <div class="logo">STATS<span>PRO</span></div>
+    <div class="sub">Football Analytics</div>
+  </div>
+  <div class="search-wrap" role="search">
+    <div class="search-wrap-inner">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input type="search" class="search-input" id="team-search" placeholder="Buscar time…" aria-label="Buscar time nos rankings" oninput="filterTeamSearch(this.value)">
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label" id="nav-label">Categorias</div>
+    <div class="nav-item active" onclick="setView('overview',this)" role="button" tabindex="0" aria-label="Visão Geral" onkeydown="if(event.key==='Enter'||event.key===' ')setView('overview',this)"><span class="nav-icon" aria-hidden="true">📊</span> Visão Geral <span class="badge">30</span></div>
+    <div class="nav-item" onclick="setView('gols',this)" role="button" tabindex="0" aria-label="Gols" onkeydown="if(event.key==='Enter'||event.key===' ')setView('gols',this)"><span class="nav-icon" aria-hidden="true">⚽</span> Gols <span class="badge">30</span></div>
+    <div class="nav-item" onclick="setView('escanteios',this)" role="button" tabindex="0" aria-label="Escanteios" onkeydown="if(event.key==='Enter'||event.key===' ')setView('escanteios',this)"><span class="nav-icon" aria-hidden="true">🚩</span> Escanteios <span class="badge">30</span></div>
+    <div class="nav-item" onclick="setView('finalizacoes',this)" role="button" tabindex="0" aria-label="Finalizações" onkeydown="if(event.key==='Enter'||event.key===' ')setView('finalizacoes',this)"><span class="nav-icon" aria-hidden="true">🎯</span> Finalizações <span class="badge">30</span></div>
+    <div class="nav-item" onclick="setView('cartoes',this)" role="button" tabindex="0" aria-label="Cartões" onkeydown="if(event.key==='Enter'||event.key===' ')setView('cartoes',this)"><span class="nav-icon" aria-hidden="true">🟨</span> Cartões <span class="badge">30</span></div>
+    <div class="nav-item" onclick="setView('c10',this)" role="button" tabindex="0" aria-label="Cantos 10 min" onkeydown="if(event.key==='Enter'||event.key===' ')setView('c10',this)"><span class="nav-icon" aria-hidden="true">🚩</span> Cantos 10 min <span class="badge">100</span></div>
+    <div class="nav-item" onclick="setView('scout',this)" role="button" tabindex="0" aria-label="Scout por Time" onkeydown="if(event.key==='Enter'||event.key===' ')setView('scout',this)" style="color:var(--accent);border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.04)"><span class="nav-icon" aria-hidden="true">🔎</span> Scout por Time <span class="badge" style="background:rgba(0,229,160,0.15);color:var(--accent)">NEW</span></div>
+    <div class="nav-item" onclick="setView('underranking',this)" role="button" tabindex="0" aria-label="Ranking Under" onkeydown="if(event.key==='Enter'||event.key===' ')setView('underranking',this)" style="color:var(--accent2);border-color:rgba(255,77,109,0.2);background:rgba(255,77,109,0.04)"><span class="nav-icon" aria-hidden="true">📉</span> Ranking Under <span class="badge" style="background:rgba(255,77,109,0.15);color:var(--accent2)">NEW</span></div>
+    <div class="nav-item" onclick="setView('matchanalyzer',this)" role="button" tabindex="0" aria-label="Analisar Partida" onkeydown="if(event.key==='Enter'||event.key===' ')setView('matchanalyzer',this)" style="color:var(--accent3);border-color:rgba(255,209,102,0.25);background:rgba(255,209,102,0.05)"><span class="nav-icon" aria-hidden="true">⚡</span> Analisar Partida <span class="badge" style="background:rgba(255,209,102,0.18);color:var(--accent3)">HOT</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main" role="main">
+  <header id="topbar">
+    <button id="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <div class="topbar-title" id="topbar-title">🌍 Todas as Ligas — <span style="color:var(--accent)">Análise Estatística</span></div>
+    <div class="topbar-right">
+      <div class="liga-selector" role="group" aria-label="Filtrar por liga">
+        <span class="liga-selector-label">Liga</span>
+        <button class="liga-btn active" id="liga-btn-all" onclick="setLiga('all')" aria-pressed="true">🌍 Todas</button>
+        <button class="liga-btn" id="liga-btn-35" onclick="setLiga('35')" aria-pressed="false">🏴 Premier</button>
+        <button class="liga-btn" id="liga-btn-39" onclick="setLiga('39')" aria-pressed="false">🇫🇷 Ligue 1</button>
+        <button class="liga-btn" id="liga-btn-104" onclick="setLiga('104')" aria-pressed="false">🇩🇰 Superliga</button>
+        <button class="liga-btn" id="liga-btn-36" onclick="setLiga('36')" aria-pressed="false">🇪🇸 La Liga</button>
+      </div>
+      <div class="meta-pills">
+        <div class="pill" id="pill-jogos"><strong id="pill-count">399</strong> jogos</div>
+        <div class="pill"><strong>PT + ST</strong> detalhado</div>
+      </div>
+    </div>
+  </header>
+  <div id="content" tabindex="-1">
+
+    <!-- OVERVIEW -->
+    <div id="view-overview" class="view active">
+      <div class="section-header"><div class="section-icon">📊</div><div>
+        <div class="section-title">VISÃO GERAL</div>
+        <div class="section-desc">Resumo completo dos 30 jogos da rodada</div>
+      </div></div>
+      <div class="overview-grid" id="ov-grid"></div>
+      <div class="ranking-section">
+        <div class="ranking-title">🏅 TIMES COM MAIS GOLS — clique no time para ver seus jogos</div>
+        <table class="ranking-table" id="ov-ranking"></table>
+      </div>
+      <div id="ov-detail"></div>
+      <div class="divider"></div>
+      <div class="all-games-label">TODOS OS JOGOS</div>
+      <div class="stat-grid" id="ov-matches"></div>
+    </div>
+
+    <!-- GOLS -->
+    <div id="view-gols" class="view">
+      <div class="section-header"><div class="section-icon">⚽</div><div>
+        <div class="section-title">GOLS</div>
+        <div class="section-desc">1° e 2° tempo — Casa e Visitante</div>
+      </div></div>
+
+      <!-- KPIs topo -->
+      <div class="overview-grid" id="gols-kpis"></div>
+
+      <!-- 💡 INSIGHTS GOLS -->
+      <div class="insights-panel" id="gols-insights-panel" style="border-color:rgba(0,229,160,0.3);background:linear-gradient(135deg,rgba(0,229,160,0.05),rgba(0,229,160,0.01))">
+        <div class="insights-header" onclick="toggleInsights('gols')">
+          <span class="insights-icon">💡</span>
+          <div>
+            <div class="insights-title" style="color:var(--accent)">VOCÊ SABIA? — GOLS</div>
+            <div class="insights-subtitle">Padrões de gols por período, casa e fora — mínimo 75% de frequência</div>
+          </div>
+          <button class="insights-toggle" id="gols-insights-toggle" style="border-color:rgba(0,229,160,0.3);color:var(--accent)" onclick="event.stopPropagation();toggleInsights('gols')">▼ Expandir</button>
+        </div>
+        <div class="insights-body" id="gols-insights-body" style="display:none">
+          <div id="gols-insights-list"></div>
+        </div>
+      </div>
+
+      <div class="ranking-section">
+        <div class="ranking-title">🥇 RANKING — Mais Gols Marcados — clique no time para ver seus jogos</div>
+        <table class="ranking-table" id="gols-ranking"></table>
+      </div>
+      <div id="gols-detail"></div>
+      <div class="divider"></div>
+      <div class="all-games-label">TODOS OS JOGOS</div>
+      <div class="stat-grid" id="gols-grid"></div>
+    </div>
+
+    <!-- ESCANTEIOS -->
+    <div id="view-escanteios" class="view">
+      <div class="section-header"><div class="section-icon">🚩</div><div>
+        <div class="section-title">ESCANTEIOS</div>
+        <div class="section-desc">1° e 2° tempo por equipe</div>
+      </div></div>
+
+      <!-- 💡 INSIGHTS ESCANTEIOS -->
+      <div class="insights-panel" id="cant-insights-panel" style="border-color:rgba(76,201,240,0.3);background:linear-gradient(135deg,rgba(76,201,240,0.05),rgba(76,201,240,0.01))">
+        <div class="insights-header" onclick="toggleInsights('cant')">
+          <span class="insights-icon">💡</span>
+          <div>
+            <div class="insights-title" style="color:var(--accent4)">VOCÊ SABIA? — ESCANTEIOS</div>
+            <div class="insights-subtitle">Padrões por período, casa e fora — mínimo 75% de frequência</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+            <button class="insights-toggle" id="cant-ouro-btn" onclick="event.stopPropagation();toggleCantOuro()" style="background:rgba(255,209,102,0.12);border-color:rgba(255,209,102,0.4);color:var(--accent3)">⭐ Dica de Ouro</button>
+            <button class="insights-toggle" id="cant-insights-toggle" style="border-color:rgba(76,201,240,0.3);color:var(--accent4)" onclick="event.stopPropagation();toggleInsights('cant')">▼ Expandir</button>
+          </div>
+        </div>
+        <div class="insights-body" id="cant-insights-body" style="display:none">
+          <div id="cant-insights-list"></div>
+        </div>
+      </div>
+
+      <div class="ranking-section">
+        <div class="ranking-title">🥇 RANKING — Mais Escanteios — clique no time para ver seus jogos</div>
+        <table class="ranking-table" id="cant-ranking"></table>
+      </div>
+      <div id="cant-detail"></div>
+      <div class="divider"></div>
+      <div class="all-games-label">TODOS OS JOGOS</div>
+      <div class="stat-grid" id="cant-grid"></div>
+    </div>
+
+    <!-- FINALIZAÇÕES -->
+    <div id="view-finalizacoes" class="view">
+      <div class="section-header"><div class="section-icon">🎯</div><div>
+        <div class="section-title">FINALIZAÇÕES</div>
+        <div class="section-desc">Chutes no alvo e para fora — 1° e 2° tempo</div>
+      </div></div>
+
+      <!-- KPIs topo -->
+      <div class="overview-grid" id="fin-kpis"></div>
+
+      <!-- 💡 INSIGHTS FINALIZAÇÕES -->
+      <div class="insights-panel" style="border-color:rgba(255,209,102,0.3);background:linear-gradient(135deg,rgba(255,209,102,0.05),rgba(255,209,102,0.01))">
+        <div class="insights-header" onclick="toggleInsights('fin')">
+          <span class="insights-icon">💡</span>
+          <div>
+            <div class="insights-title" style="color:var(--accent3)">VOCÊ SABIA? — FINALIZAÇÕES</div>
+            <div class="insights-subtitle">Alvo: muito ≥5 · pouco ≤2 &nbsp;|&nbsp; Fora: muito ≥6 · pouco ≤3 &nbsp;|&nbsp; mín. 75% de frequência</div>
+          </div>
+          <button class="insights-toggle" id="fin-insights-toggle" onclick="event.stopPropagation();toggleInsights('fin')">▼ Expandir</button>
+        </div>
+        <div class="insights-body" id="fin-insights-body" style="display:none">
+          <div id="fin-insights-list"></div>
+        </div>
+      </div>
+
+      <div class="ranking-section">
+        <div class="ranking-title">🥇 RANKING — Mais Chutes no Alvo — clique no time para filtrar os jogos abaixo</div>
+        <table class="ranking-table" id="fin-ranking"></table>
+      </div>
+      <div id="fin-detail"></div>
+      <div class="divider"></div>
+
+      <!-- Filtros -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div id="fin-grid-label" class="all-games-label" style="margin-bottom:0">TODOS OS JOGOS — FINALIZAÇÕES</div>
+        <div class="filter-scroll" role="group" aria-label="Filtrar finalizações">
+          <span style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Filtrar:</span>
+          <button class="c10-filter-btn active" id="fbtn-on-pt"  onclick="setFinFilter('on-pt')" aria-pressed="true">🎯 Alvo — 1°T</button>
+          <button class="c10-filter-btn"        id="fbtn-off-pt" onclick="setFinFilter('off-pt')" aria-pressed="false">💨 Fora — 1°T</button>
+          <button class="c10-filter-btn"        id="fbtn-on-st"  onclick="setFinFilter('on-st')" aria-pressed="false">🎯 Alvo — 2°T</button>
+          <button class="c10-filter-btn"        id="fbtn-off-st" onclick="setFinFilter('off-st')" aria-pressed="false">💨 Fora — 2°T</button>
+        </div>
+      </div>
+      <div class="stat-grid" id="fin-grid"></div>
+    </div>
+
+    <!-- CARTÕES -->
+    <div id="view-cartoes" class="view">
+      <div class="section-header"><div class="section-icon">🟨</div><div>
+        <div class="section-title">CARTÕES</div>
+        <div class="section-desc">Amarelos e Vermelhos — 1° tempo, 2° tempo e jogo completo</div>
+      </div></div>
+
+      <!-- KPI topo -->
+      <div class="overview-grid" id="card-kpis"></div>
+
+      <!-- 💡 INSIGHTS CARTÕES -->
+      <div class="insights-panel" style="border-color:rgba(255,77,109,0.3);background:linear-gradient(135deg,rgba(255,77,109,0.05),rgba(255,77,109,0.01))">
+        <div class="insights-header" onclick="toggleInsights('card')">
+          <span class="insights-icon">💡</span>
+          <div>
+            <div class="insights-title" style="color:var(--accent2)">VOCÊ SABIA? — CARTÕES</div>
+            <div class="insights-subtitle">Padrões de disciplina detectados por período — mínimo 75% de frequência</div>
+          </div>
+          <button class="insights-toggle" id="card-insights-toggle" style="background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3);color:var(--accent2)" onclick="event.stopPropagation();toggleInsights('card')">▼ Expandir</button>
+        </div>
+        <div class="insights-body" id="card-insights-body" style="display:none">
+          <div id="card-insights-list"></div>
+        </div>
+      </div>
+
+      <div class="ranking-section">
+        <div class="ranking-title">🥇 RANKING — Mais Cartões Amarelos — clique no time para ver seus jogos</div>
+        <table class="ranking-table" id="card-ranking"></table>
+      </div>
+      <div id="card-detail"></div>
+      <div class="divider"></div>
+
+      <!-- Filtros período -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="all-games-label" style="margin-bottom:0">TODOS OS JOGOS — CARTÕES</div>
+        <div class="filter-scroll" role="group" aria-label="Filtrar por período">
+          <span style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Período:</span>
+          <button class="c10-filter-btn active" id="cbtn-total" onclick="setCardFilter('total')" aria-pressed="true">🃏 Jogo Todo</button>
+          <button class="c10-filter-btn" id="cbtn-pt" onclick="setCardFilter('pt')" aria-pressed="false">1° Tempo</button>
+          <button class="c10-filter-btn" id="cbtn-st" onclick="setCardFilter('st')" aria-pressed="false">2° Tempo</button>
+        </div>
+      </div>
+      <div class="stat-grid" id="card-grid"></div>
+    </div>
+
+    <!-- C10 / CANTOS 10 MIN -->
+    <div id="view-c10" class="view">
+      <div class="section-header"><div class="section-icon">🚩</div><div>
+        <div class="section-title">CANTOS 10 MIN</div>
+        <div class="section-desc">Escanteios batidos nos primeiros 10 minutos de jogo — casa + fora</div>
+      </div></div>
+
+      <!-- KPI cards topo -->
+      <div class="overview-grid" id="c10-kpis"></div>
+
+      <!-- 💡 PAINEL DE DICAS -->
+      <div class="insights-panel">
+        <div class="insights-header" onclick="toggleInsights('c10')">
+          <span class="insights-icon">💡</span>
+          <div>
+            <div class="insights-title">VOCÊ SABIA?</div>
+            <div class="insights-subtitle">Padrões detectados automaticamente com base nos dados — mínimo 75% de frequência</div>
+          </div>
+          <button class="insights-toggle" id="c10-insights-toggle" onclick="event.stopPropagation();toggleInsights('c10')">▼ Expandir</button>
+        </div>
+        <div class="insights-body" id="c10-insights-body" style="display:none">
+          <div id="c10-insights-list"></div>
+        </div>
+      </div>
+
+      <!-- Ranking clicável -->
+      <div class="ranking-section" style="margin-top:20px">
+        <div class="ranking-title">🥇 RANKING — Times que mais batem escanteios nos 10 min — clique para filtrar</div>
+        <table class="ranking-table" id="c10-ranking"></table>
+      </div>
+      <div id="c10-detail"></div>
+      <div class="divider"></div>
+
+      <!-- Filtro 2+ cantos -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="all-games-label" style="margin-bottom:0">TODOS OS JOGOS — CANTOS NOS 10 MIN</div>
+        <div class="filter-scroll" role="group" aria-label="Filtrar cantos 10 minutos">
+          <span style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Filtrar:</span>
+          <button class="c10-filter-btn active" id="btn-todos"  onclick="setC10Filter('todos')" aria-pressed="true">Todos</button>
+          <button class="c10-filter-btn" id="btn-2mais"  onclick="setC10Filter('2mais')" aria-pressed="false">🚩 2+ Cantos</button>
+          <button class="c10-filter-btn" id="btn-menos2" onclick="setC10Filter('menos2')" aria-pressed="false">📉 Menos de 2</button>
+          <button class="c10-filter-btn" id="btn-zero"   onclick="setC10Filter('zero')" aria-pressed="false">⬛ Nenhum</button>
+        </div>
+      </div>
+      <div class="stat-grid" id="c10-grid"></div>
+    </div>
+
+    <!-- SCOUT POR TIME -->
+    <div id="view-scout" class="view">
+      <div class="section-header"><div class="section-icon">🔎</div><div>
+        <div class="section-title">SCOUT POR TIME</div>
+        <div class="section-desc">Ficha completa de apostas — todos os padrões do time selecionado</div>
+      </div></div>
+
+      <!-- Seletor de time -->
+      <div id="scout-selector-wrap" style="margin-bottom:24px;">
+        <div style="position:relative;max-width:420px;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none;">🔎</span>
+          <input type="search" id="scout-search" placeholder="Digite o nome do time…" autocomplete="off"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px 13px 44px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s;"
+            oninput="filterScoutDropdown(this.value)" onfocus="showScoutDropdown()" aria-label="Buscar time para scout" aria-autocomplete="list" aria-controls="scout-dropdown">
+          <div id="scout-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;z-index:100;max-height:260px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.4);"></div>
+        </div>
+        <div id="scout-threshold-wrap" style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Confiança mínima:</span>
+          <button class="c10-filter-btn" id="thr-70" onclick="setScoutThreshold(70)" aria-pressed="true">70%+</button>
+          <button class="c10-filter-btn" id="thr-75" onclick="setScoutThreshold(75)" aria-pressed="false">75%+</button>
+          <button class="c10-filter-btn" id="thr-80" onclick="setScoutThreshold(80)" aria-pressed="false">80%+</button>
+          <button class="c10-filter-btn" id="thr-90" onclick="setScoutThreshold(90)" aria-pressed="false">90%+</button>
+          <span style="width:1px;height:18px;background:var(--border);display:inline-block;margin:0 4px;"></span>
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Tipo:</span>
+          <button class="c10-filter-btn active" id="scout-type-all"   onclick="setScoutTypeFilter('all')"   aria-pressed="true"  style="border-color:rgba(255,255,255,0.2);color:var(--text);">Todos</button>
+          <button class="c10-filter-btn"        id="scout-type-over"  onclick="setScoutTypeFilter('over')"  aria-pressed="false" style="border-color:rgba(0,229,160,0.3);color:var(--accent);">📈 OVER</button>
+          <button class="c10-filter-btn"        id="scout-type-under" onclick="setScoutTypeFilter('under')" aria-pressed="false" style="border-color:rgba(255,77,109,0.3);color:var(--accent2);">📉 UNDER</button>
+        </div>
+      </div>
+
+      <!-- Placeholder / Resultado -->
+      <div id="scout-placeholder" style="text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:16px;">🔎</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:8px;">SELECIONE UM TIME</div>
+        <div style="font-size:13px;">Digite o nome acima ou clique em qualquer time nos outros rankings</div>
+      </div>
+      <div id="scout-result" style="display:none;"></div>
+    </div>
+
+    <!-- RANKING UNDER -->
+    <div id="view-underranking" class="view">
+      <div class="section-header"><div class="section-icon">📉</div><div>
+        <div class="section-title">RANKING UNDER</div>
+        <div class="section-desc">Times com mais padrões UNDER ≥70% — ideais para apostas de baixo volume</div>
+      </div></div>
+      <div class="overview-grid" id="under-kpis"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px;">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Categoria:</span>
+        <button class="c10-filter-btn active" id="ucat-all"   onclick="setUnderCat('all')"   aria-pressed="true">Todos</button>
+        <button class="c10-filter-btn"        id="ucat-gols"  onclick="setUnderCat('Gols')"  aria-pressed="false">⚽ Gols</button>
+        <button class="c10-filter-btn"        id="ucat-cant"  onclick="setUnderCat('Escanteios')"  aria-pressed="false">🚩 Escanteios</button>
+        <button class="c10-filter-btn"        id="ucat-fin"   onclick="setUnderCat('Finalizações')" aria-pressed="false">🎯 Finalizações</button>
+        <button class="c10-filter-btn"        id="ucat-card"  onclick="setUnderCat('Cartões')" aria-pressed="false">🟨 Cartões</button>
+        <button class="c10-filter-btn"        id="ucat-c10"   onclick="setUnderCat('Cantos 10min')" aria-pressed="false">🚩 Cantos 10min</button>
+      </div>
+      <div id="under-ranking-grid"></div>
+    </div>
+
+    <!-- ANALISAR PARTIDA -->
+    <div id="view-matchanalyzer" class="view">
+      <div class="section-header"><div class="section-icon">⚡</div><div>
+        <div class="section-title">ANALISAR PARTIDA</div>
+        <div class="section-desc">Probabilidades dos principais mercados de apostas baseado no histórico dos times</div>
+      </div></div>
+
+      <div class="ma-team-selector">
+        <div class="ma-team-wrap">
+          <div class="ma-team-label">🏠 Time da Casa</div>
+          <input type="search" id="ma-home-input" class="ma-team-input home" placeholder="Ex: Real Madrid" autocomplete="off"
+            oninput="maFilterDropdown('home',this.value)" onfocus="maShowDropdown('home')" aria-label="Time da casa">
+          <div id="ma-home-dropdown" class="ma-dropdown"></div>
+        </div>
+        <div class="ma-vs">VS</div>
+        <div class="ma-team-wrap">
+          <div class="ma-team-label">✈️ Time Visitante</div>
+          <input type="search" id="ma-away-input" class="ma-team-input away" placeholder="Ex: Barcelona" autocomplete="off"
+            oninput="maFilterDropdown('away',this.value)" onfocus="maShowDropdown('away')" aria-label="Time visitante">
+          <div id="ma-away-dropdown" class="ma-dropdown"></div>
+        </div>
+      </div>
+
+      <button class="ma-analyze-btn" id="ma-btn" onclick="runMatchAnalysis()" disabled>⚡ ANALISAR PARTIDA</button>
+
+      <div id="ma-placeholder" style="text-align:center;padding:50px 20px;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:16px;">⚡</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:8px;">SELECIONE OS DOIS TIMES</div>
+        <div style="font-size:13px;">Digite o nome de cada time nos campos acima para ver as probabilidades do próximo jogo</div>
+      </div>
+      <div id="ma-result" style="display:none;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const raw = `Jogo;Liga;Placar_FT;Gols_C_PT;Gols_V_PT;Gols_C_ST;Gols_V_ST;C10_Casa;C10_Vis;Canto_C_PT;Canto_V_PT;Canto_C_ST;Canto_V_ST;On_C_PT;Off_C_PT;On_V_PT;Off_V_PT;On_C_ST;Off_C_ST;On_V_ST;Off_V_ST;Amarelo_Casa_PT;Amarelo_Vis_PT;Amarelo_Casa_ST;Amarelo_Vis_ST;Vermelho_Casa_PT;Vermelho_Vis_PT;Vermelho_Casa_ST;Vermelho_Vis_ST
+Tottenham x Crystal Palace;35;1-3;1;3;0;0;0;0;2;1;4;2;3;2;8;1;3;6;0;4;2;1;1;1;1;0;0;0
+Newcastle x Man Utd;35;2-1;1;1;1;0;0;0;0;2;2;2;3;7;4;4;4;1;2;5;2;2;1;1;1;0;0;0
+Aston Villa x Chelsea;35;0-0;1;2;-1;-2;0;4;1;8;2;0;5;0;7;6;1;5;5;1;1;0;2;2;0;0;0;0
+Brighton x Arsenal;35;0-1;0;1;0;0;1;0;2;0;2;3;1;5;2;0;2;3;1;5;0;1;4;0;0;0;0;0
+Fulham x West Ham;35;0-1;0;0;0;1;0;0;2;3;4;2;2;3;1;3;3;5;3;3;0;2;2;2;0;0;0;0
+Man City x Nottm Forest;35;2-2;1;0;1;2;0;0;1;0;5;1;4;4;2;2;4;11;4;3;0;1;0;3;0;0;0;0
+Wolverhampton x Liverpool;35;2-1;0;0;2;1;1;0;1;4;1;7;0;0;2;4;5;1;6;8;0;1;2;0;0;0;0;0
+Everton x Burnley;35;2-0;1;0;1;0;2;0;5;0;1;3;4;7;0;1;4;3;3;2;0;0;0;1;0;0;0;0
+Leeds x Sunderland;35;0-1;0;0;0;1;0;0;5;1;4;1;1;5;0;1;4;8;2;1;0;1;1;2;0;0;0;0
+Bournemouth x Brentford;35;0-0;0;0;0;0;0;0;3;1;1;2;1;3;0;2;2;9;2;1;0;0;2;1;0;0;0;0
+Arsenal x Chelsea;35;2-1;1;1;1;0;0;0;3;3;2;7;3;6;0;3;4;1;4;3;0;0;1;4;0;0;0;1
+Brighton x Nottm Forest;35;2-1;2;1;0;0;0;2;1;4;3;0;8;2;3;2;1;5;2;7;0;1;3;0;0;0;0;0
+Fulham x Tottenham;35;2-1;2;0;0;1;2;0;3;4;3;4;4;5;0;9;2;9;2;2;0;0;3;3;0;0;0;0
+Man Utd x Crystal Palace;35;2-1;0;1;2;0;0;1;3;1;4;0;3;3;3;2;10;6;1;3;1;1;1;1;0;0;0;1
+Leeds x Man City;35;0-1;0;1;0;0;0;0;2;2;3;1;2;6;5;0;0;6;1;9;0;0;0;3;0;0;0;0
+Burnley x Brentford;35;3-4;1;3;2;1;0;2;2;4;2;4;1;4;8;4;5;5;3;6;0;0;2;1;0;0;0;0
+Newcastle x Everton;35;2-3;1;2;1;1;0;0;5;1;2;1;4;2;5;2;5;9;3;2;0;0;3;3;0;0;0;0
+Liverpool x West Ham;35;5-2;3;0;2;2;1;0;8;2;2;3;7;5;0;5;4;6;6;2;0;1;2;1;0;0;0;0
+Bournemouth x Sunderland;35;1-1;0;1;1;0;0;1;4;2;3;1;4;5;4;1;1;11;2;3;0;1;4;1;0;0;0;0
+Wolverhampton x Aston Villa;35;2-0;0;0;2;0;0;2;0;2;0;3;0;2;2;2;4;5;3;7;0;0;3;3;0;0;0;0
+Everton x Man Utd;35;0-1;0;0;0;1;0;0;1;0;9;1;1;1;2;5;3;7;2;3;0;0;2;3;0;0;0;0
+Tottenham x Arsenal;35;1-4;1;1;0;3;0;0;1;4;1;1;2;1;4;9;4;0;7;4;1;1;1;0;0;0;0;0
+Sunderland x Fulham;35;1-3;0;0;1;3;1;0;6;1;0;3;1;4;0;4;2;7;7;4;0;1;1;0;0;0;0;0
+Crystal Palace x Wolverhampton;35;1-0;0;0;1;0;0;0;4;3;3;0;0;6;5;2;4;5;2;3;3;0;2;2;0;0;0;1
+Nottm Forest x Liverpool;35;0-1;0;0;0;1;1;0;3;0;4;2;2;10;0;3;0;6;6;4;1;0;1;0;0;0;0;0
+Man City x Newcastle;35;2-1;2;1;0;0;4;0;5;2;0;3;6;4;7;1;3;4;2;5;1;1;1;4;0;0;0;0
+West Ham x Bournemouth;35;0-0;0;0;0;0;1;0;3;1;6;4;2;7;2;0;1;10;3;5;1;1;0;0;0;0;0;0
+Aston Villa x Leeds;35;1-1;0;1;1;0;0;1;4;2;3;0;3;3;3;5;2;10;2;5;0;0;1;4;0;0;0;0
+Brentford x Brighton;35;0-2;0;2;0;0;0;1;3;4;3;0;2;4;8;3;1;8;1;1;0;1;1;1;0;0;0;0
+Chelsea x Burnley;35;1-1;1;0;0;1;0;1;3;2;6;3;3;3;2;3;0;7;3;5;1;1;2;1;0;0;1;0
+Wolverhampton x Arsenal;35;2-2;0;1;2;1;0;0;0;2;1;1;0;2;4;4;3;1;2;2;1;0;1;0;0;0;0;0
+Brentford x Arsenal;35;1-1;0;0;1;1;1;1;1;3;5;1;1;2;0;1;3;8;3;4;1;2;2;0;0;0;0;0
+Sunderland x Liverpool;35;0-1;0;0;0;1;1;1;1;7;2;4;1;1;2;13;2;8;2;8;1;0;0;0;0;0;0;0
+Crystal Palace x Burnley;35;2-3;2;3;0;0;0;0;1;1;7;1;4;4;6;2;1;13;0;3;2;0;0;1;0;0;0;0
+Aston Villa x Brighton;35;1-0;0;0;1;0;2;0;4;1;3;4;1;9;1;1;0;8;2;5;1;3;1;0;0;0;0;0
+Man City x Fulham;35;3-0;3;0;0;0;4;0;4;1;0;3;7;9;2;3;1;0;1;9;1;1;2;0;0;0;0;0
+Nottm Forest x Wolverhampton;35;0-0;0;0;0;0;2;0;3;0;5;2;6;11;0;2;5;15;3;2;0;0;0;2;0;0;0;0
+West Ham x Man Utd;35;1-1;0;0;1;1;1;0;2;2;3;1;1;1;1;2;3;3;4;5;0;0;1;1;0;0;0;0
+Chelsea x Leeds;35;2-2;1;0;1;2;0;0;0;0;4;1;4;5;0;1;2;10;4;1;2;3;1;1;0;0;0;0
+Everton x Bournemouth;35;1-2;1;0;0;2;1;1;1;2;6;0;5;1;2;4;3;8;4;3;0;0;1;3;0;0;1;0
+Tottenham x Newcastle;35;1-2;0;1;1;1;0;2;0;9;2;3;0;4;6;8;3;10;2;9;1;0;2;2;0;0;0;0
+Liverpool x Man City;35;1-2;0;0;1;2;0;0;2;4;3;0;0;3;4;7;5;8;7;2;0;1;2;3;0;0;1;0
+Brighton x Crystal Palace;35;0-1;0;0;0;1;2;0;2;2;1;2;1;5;0;2;1;0;5;2;0;1;1;2;0;0;0;0
+Newcastle x Brentford;35;2-3;1;2;1;1;0;0;7;1;3;2;3;6;5;3;3;7;3;3;1;0;1;2;0;0;0;0
+Wolverhampton x Chelsea;35;1-3;0;3;1;0;1;0;1;4;2;0;0;2;8;6;4;6;1;3;1;0;0;1;0;0;0;0
+Fulham x Everton;35;1-2;1;0;0;2;0;1;5;3;1;3;3;8;2;7;0;3;2;7;0;1;1;4;0;0;0;0
+Burnley x West Ham;35;0-2;0;2;0;0;0;0;2;2;3;0;2;5;4;0;4;8;2;2;1;1;2;0;0;0;0;0
+Arsenal x Sunderland;35;3-0;1;0;2;0;0;0;3;2;2;0;3;7;2;1;5;5;1;1;1;2;0;0;0;0;0;0
+Bournemouth x Aston Villa;35;1-1;0;1;1;0;2;0;4;0;7;4;5;8;4;0;6;3;3;4;1;1;0;0;0;0;0;0
+Man Utd x Tottenham;35;2-0;1;0;1;0;0;0;4;0;3;0;4;7;1;4;10;6;0;2;1;1;0;1;0;1;0;0
+Leeds x Nottm Forest;35;3-1;2;0;1;1;4;0;4;5;1;5;5;4;4;5;5;5;3;7;0;0;1;1;0;0;0;0
+Sunderland x Burnley;35;3-0;2;0;1;0;0;0;0;1;1;1;3;2;0;2;4;7;0;3;0;1;1;3;0;0;0;0
+Tottenham x Man City;35;2-2;0;2;2;0;0;0;0;0;3;4;1;3;5;3;7;4;0;9;2;2;1;1;0;0;0;0
+Aston Villa x Brentford;35;0-1;0;1;0;0;0;0;2;1;10;0;0;6;2;3;6;16;1;2;0;2;1;2;0;1;0;0
+Nottm Forest x Crystal Palace;35;1-1;1;1;0;0;0;4;3;5;2;2;2;1;4;7;0;7;0;4;0;2;1;1;1;0;0;0
+Man Utd x Fulham;35;0-0;1;0;-1;0;1;0;3;3;0;4;4;1;2;5;5;6;7;3;0;1;2;0;0;0;0;0
+Liverpool x Newcastle;35;4-1;2;1;2;0;0;4;3;8;4;3;6;4;3;4;5;6;0;2;0;2;1;1;0;0;0;0
+Chelsea x West Ham;35;3-2;0;2;3;0;1;0;4;2;5;1;1;4;6;2;8;4;2;3;0;0;3;2;0;0;0;1
+Brighton x Everton;35;1-1;0;0;1;1;1;0;4;0;1;2;1;6;0;0;3;3;5;5;0;0;1;2;0;0;0;0
+Wolverhampton x Bournemouth;35;0-2;0;1;0;1;1;0;1;3;4;3;2;1;3;2;5;9;3;3;1;0;2;3;0;0;0;0
+Leeds x Arsenal;35;0-4;0;2;0;2;1;1;1;7;3;5;0;1;3;0;1;1;8;6;1;0;0;1;0;0;0;0
+Everton x Leeds;35;1-1;0;1;1;0;2;0;3;2;1;2;0;4;4;9;4;3;1;3;0;0;0;3;0;0;0;0
+Arsenal x Man Utd;35;2-3;1;1;1;2;1;0;4;2;5;0;1;8;2;5;5;6;4;2;0;0;2;0;0;0;0;0
+Brentford x Nottm Forest;35;0-2;0;1;0;1;0;2;3;5;3;0;1;3;2;5;0;7;2;0;0;0;1;0;0;0;0;0
+Newcastle x Aston Villa;35;0-2;0;1;0;1;0;1;2;3;4;2;3;1;5;4;3;10;5;2;1;0;0;2;0;0;0;0
+Crystal Palace x Chelsea;35;0-0;0;1;0;-1;0;1;1;4;3;1;1;3;2;4;7;3;7;0;0;1;3;1;0;0;1;0
+Bournemouth x Liverpool;35;3-2;2;1;1;1;0;0;1;7;2;4;4;1;3;5;4;7;2;6;1;0;0;1;0;0;0;0
+Burnley x Tottenham;35;2-2;1;1;1;1;0;0;0;2;1;1;2;2;9;3;4;3;5;4;0;0;1;0;0;0;0;0
+Fulham x Brighton;35;2-1;0;1;2;0;1;2;3;3;3;3;1;4;4;2;5;4;3;7;0;0;1;1;0;0;0;0
+Man City x Wolverhampton;35;2-0;2;0;0;0;1;0;1;0;3;6;6;3;0;2;0;4;1;10;0;0;1;3;0;0;0;0
+West Ham x Sunderland;35;3-1;3;0;0;1;0;1;1;2;2;1;7;4;1;2;2;4;2;3;0;2;2;2;0;0;0;0
+Brighton x Bournemouth;35;1-1;0;1;1;0;1;0;3;4;8;2;3;1;3;6;3;11;0;4;0;0;2;3;0;0;0;0
+Aston Villa x Everton;35;0-1;0;0;0;1;0;0;3;4;3;0;3;3;2;5;2;10;3;1;0;1;1;1;0;0;0;0
+Wolverhampton x Newcastle;35;0-0;0;0;0;0;0;1;1;3;3;4;2;2;0;5;0;2;3;9;0;0;2;2;0;0;0;0
+Nottm Forest x Arsenal;35;0-0;0;0;0;0;0;1;3;5;1;4;0;3;0;8;0;3;3;4;0;1;1;0;0;0;0;0
+Leeds x Fulham;35;1-0;0;0;1;0;0;1;2;2;5;1;1;3;1;4;5;6;0;3;1;2;0;3;0;0;0;0
+Chelsea x Brentford;35;0-0;1;0;-1;0;0;0;2;3;1;6;2;3;3;5;2;1;3;4;0;2;3;0;0;0;0;0
+Tottenham x West Ham;35;1-2;0;1;1;1;1;0;2;3;9;2;2;6;6;8;5;9;2;5;3;1;2;2;0;0;0;0
+Sunderland x Crystal Palace;35;2-1;1;1;1;0;1;0;2;2;1;2;3;3;3;2;6;3;0;2;0;2;3;1;0;0;0;0
+Liverpool x Burnley;35;1-1;1;0;0;1;1;0;4;0;5;1;6;11;0;3;8;11;2;3;1;0;0;1;0;0;0;0
+Man Utd x Man City;35;2-0;0;0;2;0;1;1;1;3;0;3;4;2;2;3;8;2;0;3;2;1;0;2;0;0;0;0
+Arsenal x Liverpool;35;0-0;0;0;0;0;0;0;2;0;1;0;2;4;0;3;2;1;0;5;1;0;1;2;0;0;0;0
+Newcastle x Leeds;35;4-3;1;2;3;1;0;0;2;1;6;3;4;4;5;4;9;6;4;4;3;1;0;1;0;0;0;0
+Burnley x Man Utd;35;2-2;1;0;1;2;0;0;0;4;2;2;0;2;9;6;2;4;7;18;1;0;1;0;0;0;0;0
+Crystal Palace x Aston Villa;35;0-0;0;0;0;0;0;0;1;1;2;4;1;1;1;3;4;5;2;9;0;0;2;0;0;0;0;0
+Brentford x Sunderland;35;3-0;1;0;2;0;1;0;4;1;3;3;3;6;1;5;6;6;2;5;1;1;1;0;0;0;0;0
+Fulham x Chelsea;35;2-1;0;0;2;1;0;1;0;4;2;7;3;4;2;2;5;7;5;6;1;3;2;0;0;1;0;0
+Everton x Wolverhampton;35;1-1;1;0;0;1;0;0;0;1;2;6;3;7;0;3;1;4;5;5;0;1;2;2;0;0;2;0
+Man City x Brighton;35;1-1;1;0;0;1;2;0;3;1;3;1;3;7;2;1;4;12;2;2;0;2;1;4;0;0;0;0
+Bournemouth x Tottenham;35;3-2;2;1;1;1;1;0;3;3;0;4;4;2;3;4;2;6;3;8;1;0;2;3;0;0;0;0
+West Ham x Nottm Forest;35;1-2;1;0;0;2;1;0;3;2;3;3;1;5;1;4;3;6;6;4;0;0;3;0;0;0;0;0
+Man City x Chelsea;35;1-1;1;0;0;1;0;1;5;1;3;1;3;7;0;1;1;4;5;3;0;0;3;3;0;0;0;0
+Fulham x Liverpool;35;2-2;1;0;1;2;0;1;1;4;2;4;2;1;0;4;2;6;4;4;0;0;1;1;0;0;0;0
+Everton x Brentford;35;2-4;0;1;2;3;1;0;1;4;3;1;3;3;4;2;5;5;7;3;0;2;0;0;0;0;0;0
+Newcastle x Crystal Palace;35;2-0;0;0;2;0;0;1;3;5;5;1;5;0;0;7;6;5;1;3;0;0;1;2;0;0;0;0
+Tottenham x Sunderland;35;1-1;1;0;0;1;0;0;2;1;1;4;4;4;0;2;2;5;4;5;0;0;2;3;0;0;0;0
+Leeds x Man Utd;35;1-1;0;0;1;1;0;0;2;4;4;0;0;4;1;9;4;3;2;5;0;1;0;0;0;0;0;0
+Bournemouth x Arsenal;35;2-3;1;1;1;2;2;0;4;1;3;4;2;7;2;4;3;5;6;3;1;0;2;1;0;0;0;0
+Wolverhampton x West Ham;35;3-0;3;0;0;0;0;0;3;1;3;6;8;0;0;1;3;3;0;5;0;0;1;0;0;0;0;0
+Brighton x Burnley;35;2-0;1;0;1;0;1;0;3;3;1;1;4;8;1;0;3;5;2;2;0;3;0;1;0;0;0;0
+Lyon x Paris FC;39;0-0;0;0;0;0;0;0;1;1;7;1;1;7;0;5;4;3;7;5;1;0;1;0;0;0;0;0
+Brest x Le Havre;39;2-0;1;0;1;0;0;0;0;2;1;1;2;3;0;5;2;6;0;10;1;1;2;0;0;0;0;0
+Nice x Rennes;39;0-4;0;2;0;2;0;0;3;1;4;0;2;1;6;3;2;13;5;3;1;0;1;1;0;0;0;0
+Lille x Lorient;39;1-1;0;0;1;1;0;0;3;0;2;1;0;3;1;1;3;8;5;3;3;0;1;1;0;0;0;0
+Lens x Metz;39;3-0;1;0;2;0;1;1;4;1;2;3;5;10;0;1;5;8;0;4;0;1;0;2;0;0;0;0
+Toulouse x Marseille;39;0-1;0;1;0;0;1;0;2;2;2;0;0;4;3;4;2;11;2;3;0;1;2;2;0;0;0;0
+Auxerre x Strasbourg;39;0-0;0;0;0;0;1;0;3;0;2;4;3;3;3;3;1;5;3;5;1;1;0;1;0;0;0;0
+Nantes x Angers;39;0-1;0;0;0;1;0;1;1;2;2;2;0;5;1;3;3;5;4;4;0;0;1;1;0;0;0;0
+PSG x Monaco;39;1-3;0;1;1;2;0;1;3;1;4;2;1;5;2;3;5;9;7;2;0;1;1;2;0;0;0;0
+Marseille x Lyon;39;3-2;0;1;3;1;1;0;6;0;2;1;5;7;4;1;6;7;4;5;0;2;3;0;0;0;0;0
+Lille x Nantes;39;1-0;0;0;1;0;0;0;1;1;3;0;2;2;1;0;2;4;0;2;0;1;3;0;0;0;0;0
+Metz x Brest;39;0-1;0;0;0;1;1;0;2;2;10;2;0;10;0;4;6;11;2;1;0;0;2;1;0;1;0;0
+Lorient x Auxerre;39;2-2;2;2;0;0;0;1;1;3;2;4;5;5;4;3;2;5;1;4;1;2;0;1;0;0;0;0
+Paris FC x Nice;39;1-0;1;0;0;0;2;2;3;2;5;4;4;1;1;3;3;9;2;4;3;1;1;2;0;0;0;0
+Le Havre x PSG;39;0-1;0;1;0;0;0;1;1;2;2;1;0;2;6;6;2;8;5;7;1;0;2;0;0;0;0;0
+Monaco x Angers;39;2-0;0;0;2;0;0;0;3;0;2;2;0;4;1;1;6;2;1;3;0;1;0;1;0;0;0;0
+Rennes x Toulouse;39;1-0;1;0;0;0;0;0;1;0;5;1;3;5;0;2;0;3;2;6;1;2;0;1;0;0;0;0
+Strasbourg x Lens;39;1-1;1;0;0;1;0;1;2;3;0;5;5;3;0;11;2;0;6;10;1;1;1;1;0;0;0;0
+Strasbourg x Lyon;39;3-1;1;0;2;1;0;0;3;2;1;0;5;5;0;2;5;2;3;0;0;0;1;2;0;0;0;0
+Nice x Lorient;39;0-0;2;1;-2;-1;0;1;3;4;0;3;5;4;3;6;2;1;5;7;1;0;1;3;0;0;0;0
+Nantes x Le Havre;39;2-0;2;0;0;0;1;0;3;5;2;1;2;3;0;2;1;4;1;4;1;1;3;2;0;0;0;0
+Angers x Lille;39;0-1;0;1;0;0;0;0;0;2;1;5;0;2;4;5;2;1;3;4;2;1;1;0;0;0;0;0
+Auxerre x Rennes;39;0-0;0;3;0;-3;0;1;1;2;3;3;1;2;7;3;2;8;3;2;0;0;1;4;0;0;0;0
+PSG x Metz;39;3-0;2;0;1;0;1;0;2;0;2;1;6;5;0;0;3;5;0;3;0;2;0;0;0;0;0;0
+Toulouse x Paris FC;39;1-1;0;1;1;0;2;0;4;1;8;2;5;3;3;0;8;10;0;3;1;1;0;4;0;0;0;0
+Lens x Monaco;39;2-3;1;0;1;3;1;0;3;2;4;0;4;6;2;4;5;6;6;1;0;0;2;1;0;0;0;0
+Brest x Marseille;39;2-0;2;0;0;0;0;0;2;1;1;1;5;7;1;5;1;2;3;8;0;0;1;4;0;0;0;0
+Lyon x Nice;39;2-0;1;0;1;0;0;1;4;3;4;2;2;5;2;5;2;2;1;2;1;1;2;0;0;0;0;0
+Metz x Auxerre;39;1-3;0;1;1;2;0;1;1;1;3;2;1;5;0;4;5;4;7;6;1;0;1;3;0;0;0;0
+Lorient x Angers;39;0-0;1;0;-1;0;0;0;1;1;2;1;3;2;3;4;2;4;0;3;0;0;0;0;0;0;0;0
+Le Havre x Toulouse;39;2-1;1;1;1;0;0;0;1;2;0;8;2;2;5;4;2;2;7;13;0;0;2;4;1;0;0;0
+Paris FC x Lens;39;0-5;0;2;0;3;0;0;2;2;1;3;2;3;7;5;4;2;6;8;0;1;2;0;0;0;0;0
+Lille x Brest;39;1-1;0;0;1;1;2;0;7;0;6;1;3;11;1;4;3;5;4;3;0;0;0;1;0;0;0;0
+Marseille x Strasbourg;39;0-0;1;0;-1;0;0;1;1;1;4;4;5;1;1;5;3;4;6;3;2;0;2;1;0;0;0;0
+Monaco x Nantes;39;3-1;3;1;0;0;2;0;7;0;2;3;8;5;2;3;2;1;1;9;2;0;1;2;0;0;0;0
+Rennes x PSG;39;3-1;1;0;2;1;0;0;1;2;4;6;3;4;2;5;4;6;6;11;0;0;0;0;0;0;0;0
+PSG x Marseille;39;5-0;2;0;3;0;1;0;3;0;2;2;5;4;1;3;6;12;2;3;1;0;1;2;0;0;0;0
+Le Havre x Strasbourg;39;2-1;1;1;1;0;2;0;7;1;2;2;7;6;3;3;3;4;1;3;0;1;2;0;0;1;0;0
+Angers x Toulouse;39;1-0;0;0;1;0;0;0;1;0;2;5;2;1;2;5;3;7;3;3;0;0;3;2;0;0;0;0
+Auxerre x Paris FC;39;0-0;0;0;0;0;0;0;0;3;7;1;1;0;4;2;1;10;1;1;0;2;1;2;0;0;0;0
+Nice x Monaco;39;0-0;0;0;0;0;1;0;6;2;2;4;0;5;1;3;5;4;1;5;1;1;1;1;0;0;0;0
+Nantes x Lyon;39;0-1;0;1;0;0;0;0;3;3;2;1;0;5;4;6;2;6;0;1;1;1;3;1;0;0;0;0
+Brest x Lorient;39;2-0;0;0;2;0;1;1;4;2;3;5;1;5;1;6;5;2;3;6;1;0;1;0;0;0;0;0
+Lens x Rennes;39;3-1;1;1;2;0;1;0;2;0;2;4;2;6;2;3;4;2;0;13;3;1;0;1;0;0;1;0
+Metz x Lille;39;0-0;0;0;0;0;0;0;0;2;1;4;1;2;0;4;2;2;1;11;0;1;1;0;0;0;0;0
+Strasbourg x PSG;39;1-2;1;1;0;1;0;0;1;2;4;5;5;1;3;4;0;4;3;5;0;0;1;0;0;0;0;1
+Angers x Metz;39;1-0;1;0;0;0;0;0;1;0;3;3;4;4;0;1;4;6;0;4;1;1;1;1;0;1;0;0
+Toulouse x Auxerre;39;0-0;0;0;0;0;0;1;1;4;4;0;3;2;2;5;2;8;0;2;0;1;1;1;0;0;0;0
+Nice x Brest;39;2-2;0;2;2;0;1;0;6;1;0;4;4;4;4;0;7;4;0;10;2;2;3;1;0;0;0;0
+Lyon x Lille;39;0-0;1;0;-1;0;0;0;1;2;1;5;2;1;3;2;1;0;1;5;0;1;1;3;0;0;0;0
+Monaco x Rennes;39;4-0;1;0;3;0;1;0;4;1;1;1;3;3;3;0;7;5;2;4;1;2;0;0;0;0;0;0
+Lorient x Nantes;39;2-1;1;0;1;1;0;0;0;1;1;3;4;0;0;4;2;1;4;5;2;0;2;5;0;0;0;0
+Paris FC x Marseille;39;2-2;0;1;2;1;1;0;2;3;2;1;1;3;5;7;5;2;2;8;1;0;0;4;0;0;0;0
+Lens x Le Havre;39;1-0;1;0;0;0;0;0;3;0;1;3;4;7;0;3;1;5;2;3;0;0;1;2;0;0;0;0
+Lille x Strasbourg;39;0-0;0;2;0;-2;1;0;5;1;3;0;2;9;5;5;4;5;5;4;1;1;1;1;0;0;0;0
+Brest x Toulouse;39;0-2;0;2;0;0;0;0;0;2;3;0;1;2;6;0;4;6;2;3;1;0;1;3;0;0;0;0
+Metz x Lyon;39;2-5;1;4;1;1;0;0;3;1;3;3;3;3;12;0;5;6;4;3;0;0;1;0;0;0;0;0
+Paris FC x Angers;39;0-0;0;0;0;0;0;0;1;0;1;1;0;4;1;1;2;4;0;6;1;0;0;1;0;0;0;0
+Nantes x Nice;39;1-4;1;3;0;1;0;0;2;0;2;2;5;4;6;1;2;11;2;2;2;1;1;2;0;0;0;0
+Marseille x Lens;39;3-1;2;0;1;1;0;0;0;1;2;1;5;2;0;3;3;4;3;2;0;1;0;2;0;0;0;0
+Le Havre x Monaco;39;0-0;0;0;0;0;1;0;3;1;2;5;0;3;2;4;0;5;3;4;0;1;0;2;0;0;0;0
+Rennes x Lorient;39;0-0;0;1;0;-1;0;0;3;2;6;1;3;7;2;1;2;10;3;1;2;0;0;0;0;0;0;0
+Auxerre x PSG;39;0-1;0;0;0;1;0;2;0;4;2;3;0;1;5;2;0;8;4;6;0;0;0;1;0;0;0;0
+Lyon x Brest;39;2-1;2;0;0;1;0;0;4;0;1;0;6;8;1;1;5;6;2;2;0;0;2;0;0;0;0;0
+Rennes x Le Havre;39;1-1;0;0;1;1;1;0;1;4;9;2;2;2;2;2;8;10;3;1;1;0;0;4;0;0;0;0
+Nantes x Paris FC;39;1-2;0;1;1;1;0;1;0;1;1;1;0;3;4;4;2;1;2;4;1;2;0;1;0;0;0;0
+Strasbourg x Metz;39;2-1;2;1;0;0;0;0;3;0;1;1;7;5;2;3;1;3;1;4;2;2;0;1;0;0;0;0
+Angers x Marseille;39;2-5;1;4;1;1;1;1;1;1;5;1;3;0;11;5;2;4;6;7;0;0;1;1;0;0;0;0
+Toulouse x Nice;39;5-1;2;0;3;1;0;1;3;2;3;5;7;10;3;4;8;4;4;5;0;1;1;1;0;0;0;0
+Lens x Auxerre;39;1-0;0;0;1;0;0;1;0;3;1;2;1;2;0;3;6;10;0;2;1;2;1;2;0;0;0;0
+PSG x Lille;39;0-0;1;0;-1;0;0;1;1;1;3;1;3;2;2;3;8;4;2;0;0;0;0;1;0;0;0;0
+Monaco x Lorient;39;0-0;0;0;0;0;0;0;3;1;0;1;3;3;2;7;5;4;5;4;0;0;1;0;0;0;0;0
+PSG x Paris FC;39;2-1;1;0;1;1;1;1;6;1;1;0;5;12;0;1;3;3;4;2;0;0;1;0;0;0;0;0
+Brest x Auxerre;39;2-0;1;0;1;0;0;0;3;2;4;4;3;3;1;1;3;3;0;8;0;1;3;1;0;0;0;0
+Le Havre x Angers;39;2-1;1;0;1;1;1;1;5;2;1;4;5;4;0;3;3;1;4;3;0;0;1;1;0;0;0;0
+Lorient x Metz;39;0-0;0;1;0;-1;0;0;3;2;1;2;1;6;2;4;5;5;1;2;0;1;1;1;0;0;0;0
+Marseille x Nantes;39;0-2;0;1;0;1;0;1;3;3;3;0;1;4;7;3;3;3;5;3;0;1;1;2;1;0;1;0
+Lille x Rennes;39;0-2;0;0;0;2;0;4;0;5;4;2;1;2;1;7;2;8;5;7;1;1;0;0;1;0;0;0
+Nice x Strasbourg;39;1-1;0;1;1;0;0;1;2;5;3;2;1;9;3;1;6;5;3;2;1;1;0;1;0;0;0;0
+Monaco x Lyon;39;1-3;1;1;0;2;0;0;4;1;3;1;4;3;4;4;0;1;8;1;1;1;1;2;0;0;1;0
+Toulouse x Lens;39;0-3;0;0;0;3;0;1;1;7;1;1;2;2;2;6;0;4;8;4;0;0;2;3;1;0;0;0
+Marseille x Monaco;39;1-0;0;0;1;0;1;0;2;3;1;4;3;5;5;7;6;6;5;5;1;0;1;1;0;0;0;0
+Lens x Nice;39;2-0;1;0;1;0;0;0;1;1;1;4;3;4;2;2;4;6;2;2;0;1;0;1;0;0;0;0
+Strasbourg x Lorient;39;0-0;0;0;0;0;1;0;6;3;5;0;2;4;1;7;1;6;1;1;0;0;1;0;0;0;0;0
+Auxerre x Lille;39;3-4;0;1;3;3;0;0;4;2;6;1;3;4;3;1;8;6;6;1;1;0;3;2;0;1;2;1
+Lyon x Le Havre;39;1-0;0;0;1;0;0;0;2;1;3;3;2;7;1;2;4;7;4;4;1;1;1;3;0;0;0;0
+Paris FC x Toulouse;39;0-3;0;2;0;1;1;2;4;4;3;0;2;4;5;2;0;3;2;1;0;1;3;0;0;0;0;0
+Metz x PSG;39;2-3;1;2;1;1;0;0;1;1;3;3;3;1;5;2;4;3;7;4;1;0;1;1;0;0;0;0
+Rennes x Brest;39;3-1;2;1;1;0;0;4;2;4;3;3;5;2;4;5;3;2;4;3;1;0;1;3;0;0;0;0
+Angers x Nantes;39;4-1;1;0;3;1;0;0;0;2;6;1;3;5;1;0;11;7;4;3;0;1;1;1;0;0;0;0
+Lorient x Lyon;39;1-0;1;0;0;0;1;0;1;3;0;4;4;4;3;0;3;4;2;3;0;3;2;0;0;1;0;0
+Auxerre x Metz;39;3-1;2;1;1;0;0;1;1;2;4;1;6;0;4;0;5;7;0;2;1;0;1;1;0;0;0;0
+Le Havre x Paris FC;39;0-0;0;0;0;0;2;0;4;1;3;1;0;4;0;7;2;8;2;4;0;0;0;2;0;0;0;0
+Nice x Angers;39;0-1;0;1;0;0;1;0;3;1;1;0;1;5;3;2;2;6;3;4;0;0;1;1;0;0;0;0
+PSG x Rennes;39;5-0;2;0;3;0;0;0;1;5;7;1;4;5;2;2;10;6;0;2;0;0;0;2;0;0;0;1
+Toulouse x Strasbourg;39;1-0;1;0;0;0;0;0;0;0;1;2;4;2;0;1;0;1;0;2;2;0;1;3;0;0;0;0
+Nantes x Lens;39;1-2;1;1;0;1;0;1;1;6;0;6;4;0;5;12;1;6;4;9;0;0;1;0;0;0;0;0
+Lille x Marseille;39;1-0;1;0;0;0;0;0;1;2;1;3;3;0;0;1;0;3;2;3;0;1;1;0;0;0;0;0
+Brest x Monaco;39;1-0;1;0;0;0;0;0;1;0;1;3;5;5;2;3;0;3;0;5;1;2;1;2;0;0;1;0
+Lyon x Nantes;39;3-0;0;0;3;0;1;0;2;0;5;0;1;4;1;3;9;9;2;1;0;1;1;1;0;0;0;1
+FC Copenhagen x Randers FC;104;1-2;1;1;0;1;2;1;3;4;3;2;3;9;3;2;2;5;4;6;0;0;1;2;0;0;0;0
+Sonderjyske x Odense BK;104;1-0;1;0;0;0;1;0;3;3;3;5;4;6;2;7;0;6;0;5;0;0;0;1;0;0;0;0
+Viborg x FC Nordsjaelland;104;2-1;1;0;1;1;1;0;1;1;3;1;4;9;1;2;5;6;4;9;0;0;1;1;0;0;0;0
+Midtjylland x Brondby;104;0-0;0;0;0;0;0;0;4;0;2;2;2;6;1;2;2;3;3;3;0;0;2;4;0;0;0;0
+FC Fredericia x Silkeborg IF;104;0-0;1;1;-1;-1;1;1;4;1;5;0;4;3;6;3;7;10;1;5;0;1;0;0;0;0;0;0
+Vejle x AGF Aarhus;104;0-0;0;0;0;0;0;1;1;3;1;1;1;1;2;2;6;4;6;0;1;1;0;0;0;0;0;0
+Brondby x Sonderjyske;104;0-0;0;0;0;0;0;0;2;5;3;1;1;6;1;5;1;7;3;9;0;3;2;1;0;0;0;0
+AGF Aarhus x Viborg;104;5-2;1;0;4;2;2;0;5;1;1;0;5;5;1;3;9;1;5;4;1;1;1;1;0;0;0;0
+Silkeborg IF x Midtjylland;104;0-4;0;1;0;3;0;1;3;4;3;2;1;3;6;6;0;4;9;2;2;0;1;1;0;0;0;0
+Randers FC x FC Fredericia;104;0-0;1;1;-1;-1;0;0;7;0;6;3;6;15;2;0;1;6;5;11;0;1;0;1;0;0;0;0
+Odense BK x FC Copenhagen;104;0-0;1;0;-1;0;1;3;1;2;3;2;4;7;3;2;7;4;5;3;1;1;1;2;0;0;0;0
+FC Nordsjaelland x Vejle;104;3-3;1;0;2;3;2;0;5;2;0;1;6;3;0;1;4;1;10;9;0;0;0;1;0;0;0;0
+Sonderjyske x Silkeborg IF;104;2-1;0;1;2;0;0;0;0;0;3;3;3;5;2;1;7;5;2;5;1;2;0;2;0;0;0;0
+Viborg x Brondby;104;1-0;1;0;0;0;0;0;1;3;2;0;3;3;0;1;3;6;2;5;1;0;3;1;0;0;0;0
+Odense BK x Midtjylland;104;1-4;0;4;1;0;0;2;1;6;3;0;0;1;14;6;7;4;1;3;0;0;2;2;0;0;0;1
+FC Fredericia x AGF Aarhus;104;0-0;1;1;-1;-1;0;0;3;1;1;10;2;7;4;4;0;1;2;11;0;0;3;0;0;0;0;0
+FC Copenhagen x FC Nordsjaelland;104;1-2;1;0;0;2;0;1;2;3;2;3;5;3;2;3;1;7;5;6;2;1;0;1;0;0;1;0
+Randers FC x Vejle;104;2-0;2;0;0;0;0;1;1;4;1;3;5;2;1;6;1;1;2;4;0;1;0;1;0;0;0;0
+AGF Aarhus x Odense BK;104;2-1;0;1;2;0;2;1;7;1;2;0;3;5;3;0;8;3;2;1;1;0;1;3;0;0;0;0
+Vejle x FC Fredericia;104;2-3;0;3;2;0;2;0;6;3;4;1;3;4;9;1;9;9;0;2;1;1;1;1;0;0;0;0
+Brondby x Randers FC;104;0-0;0;0;0;0;1;0;2;6;3;2;1;4;2;2;1;4;2;6;0;1;1;1;0;0;0;0
+Midtjylland x FC Copenhagen;104;2-1;0;0;2;1;0;0;1;3;3;4;1;2;0;4;5;4;4;9;0;1;0;1;0;0;0;0
+FC Nordsjaelland x Sonderjyske;104;2-1;0;0;2;1;2;0;4;1;1;1;1;3;1;6;4;7;2;3;0;0;2;1;0;0;0;0
+Silkeborg IF x Viborg;104;0-1;0;0;0;1;0;4;1;7;3;4;0;5;1;5;0;2;5;5;0;0;1;1;0;0;0;0
+Vejle x Brondby;104;2-1;0;0;2;1;0;0;1;3;0;2;0;2;1;7;5;3;2;3;1;1;4;4;0;0;0;1
+FC Copenhagen x Sonderjyske;104;0-2;0;2;0;0;0;0;2;4;6;0;3;5;7;1;2;10;1;2;1;1;1;1;0;0;0;0
+Randers FC x AGF Aarhus;104;1-2;1;2;0;0;1;0;2;2;1;2;2;6;6;5;3;6;1;2;2;0;1;1;0;0;0;0
+Viborg x Midtjylland;104;3-3;2;0;1;3;0;1;0;3;2;6;4;3;1;9;2;4;7;5;2;1;0;3;0;0;0;0
+FC Nordsjaelland x Silkeborg IF;104;4-0;4;0;0;0;2;0;5;2;2;2;12;3;1;4;3;4;2;5;2;1;2;0;0;0;0;0
+FC Fredericia x Odense BK;104;1-3;1;2;0;1;0;0;2;3;5;3;3;4;6;4;1;3;2;2;0;0;1;1;0;0;0;0
+Brondby x FC Fredericia;104;1-3;1;2;0;1;1;0;3;2;5;1;3;6;3;4;2;10;4;3;0;0;0;1;0;0;2;0
+Odense BK x Vejle;104;3-0;2;0;1;0;1;0;4;2;0;3;5;5;2;6;4;0;3;2;0;0;0;2;0;0;0;0
+Midtjylland x FC Nordsjaelland;104;6-0;4;0;2;0;2;0;5;0;1;1;9;2;0;4;7;5;0;1;0;0;0;2;0;0;0;0
+AGF Aarhus x FC Copenhagen;104;2-0;1;0;1;0;0;2;3;2;5;4;4;3;4;3;2;4;0;4;0;1;2;3;0;0;0;0
+Silkeborg IF x Randers FC;104;0-0;0;0;0;0;1;0;6;0;3;6;3;10;1;2;3;4;3;9;0;0;2;1;0;0;0;0
+Sonderjyske x Viborg;104;2-2;1;0;1;2;0;0;0;6;2;2;3;2;2;6;3;3;4;5;0;0;2;1;0;0;0;0
+Randers FC x Odense BK;104;0-0;0;0;0;0;0;0;8;1;3;5;1;8;1;3;4;4;2;8;0;0;2;2;0;0;0;0
+Sonderjyske x Midtjylland;104;2-1;1;1;1;0;1;0;4;4;3;3;4;5;2;3;3;3;1;3;0;1;2;3;0;0;0;1
+FC Nordsjaelland x FC Fredericia;104;5-0;2;0;3;0;1;0;5;0;5;1;4;9;0;1;12;5;1;2;0;0;1;1;0;0;0;0
+Viborg x Vejle;104;0-0;4;1;-4;-1;1;1;2;1;3;4;9;1;2;3;2;3;2;6;0;2;1;0;0;0;0;0
+FC Copenhagen x Brondby;104;0-0;0;0;0;0;0;1;3;2;3;2;2;7;3;3;5;6;1;4;1;1;0;1;0;0;0;0
+Silkeborg IF x AGF Aarhus;104;0-0;0;1;0;-1;0;1;2;3;3;1;1;2;3;6;3;0;3;7;0;0;0;0;0;0;0;0
+Brondby x FC Nordsjaelland;104;2-0;2;0;0;0;1;2;2;3;1;4;6;3;3;4;3;4;4;0;0;0;1;2;0;0;0;0
+AGF Aarhus x Sonderjyske;104;2-3;2;1;0;2;0;0;3;0;3;6;10;8;3;1;0;5;6;3;1;0;0;1;0;0;0;0
+Randers FC x Midtjylland;104;0-0;0;0;0;0;0;1;2;4;5;0;2;3;3;4;6;4;4;1;2;1;0;1;0;0;0;0
+Vejle x FC Copenhagen;104;2-0;0;0;2;0;1;0;1;2;3;4;2;4;1;7;6;2;2;4;0;1;0;0;0;0;0;0
+FC Fredericia x Viborg;104;0-3;0;0;0;3;0;4;1;4;0;4;0;5;1;6;2;4;7;9;2;1;0;0;0;0;0;0
+Odense BK x Silkeborg IF;104;1-1;0;1;1;0;0;0;7;1;4;0;8;3;3;3;4;2;0;0;1;0;0;0;0;0;0;0
+Midtjylland x AGF Aarhus;104;0-0;0;1;0;-1;0;2;1;4;9;1;1;4;4;5;5;9;0;4;2;0;2;3;0;0;0;0
+Silkeborg IF x Brondby;104;0-2;0;2;0;0;0;1;2;3;4;0;1;2;6;6;5;6;3;2;1;0;0;0;0;0;0;0
+FC Nordsjaelland x Odense BK;104;2-4;1;0;1;4;1;0;3;0;4;0;4;8;2;2;5;3;9;3;0;1;1;0;0;0;0;0
+Sonderjyske x Vejle;104;2-1;1;1;1;0;0;0;2;0;8;0;3;8;2;1;9;11;1;0;0;1;0;0;0;1;0;0
+Viborg x Randers FC;104;3-2;2;2;1;0;2;1;3;1;2;0;4;2;4;3;1;1;1;4;1;1;0;4;0;0;0;0
+FC Copenhagen x FC Fredericia;104;3-2;1;0;2;2;0;0;0;2;2;0;3;3;3;1;3;5;2;2;0;0;1;1;0;0;0;0
+Odense BK x Brondby;104;1-4;0;3;1;1;0;0;5;2;3;1;0;3;10;1;6;2;2;3;1;0;2;0;0;0;0;1
+FC Copenhagen x Viborg;104;0-0;0;0;0;0;1;2;3;2;3;2;0;7;0;2;3;12;3;2;0;0;1;0;0;0;0;0
+Randers FC x Sonderjyske;104;0-0;0;0;0;0;0;0;2;2;2;1;2;3;2;5;2;2;3;1;0;0;0;3;0;0;0;0
+Vejle x Silkeborg IF;104;1-2;1;2;0;0;0;2;3;5;3;5;3;3;7;1;2;6;2;6;1;0;0;0;0;0;0;0
+FC Fredericia x Midtjylland;104;0-4;0;2;0;2;2;1;3;3;4;2;1;4;9;7;4;1;6;4;1;0;1;0;0;0;0;0
+AGF Aarhus x FC Nordsjaelland;104;1-0;0;0;1;0;1;0;1;3;10;1;1;8;3;2;7;7;0;1;0;0;0;1;0;0;0;1
+Sonderjyske x FC Fredericia;104;3-0;2;0;1;0;0;2;1;8;4;1;7;1;0;8;4;12;0;4;0;0;0;0;0;0;0;0
+Midtjylland x Vejle;104;5-1;4;0;1;1;1;0;1;0;4;1;11;2;1;2;2;6;3;5;0;0;0;3;0;0;0;0
+Brondby x AGF Aarhus;104;0-0;1;0;-1;0;0;0;0;1;1;3;5;0;0;5;4;3;8;3;0;0;0;1;0;0;0;0
+FC Nordsjaelland x Randers FC;104;1-0;1;0;0;0;1;0;5;1;1;2;7;4;1;6;1;3;2;5;1;1;2;1;0;0;0;0
+Viborg x Odense BK;104;1-2;1;0;0;2;1;1;3;4;5;2;3;5;2;5;0;5;8;5;0;0;0;1;0;0;0;0
+Silkeborg IF x FC Copenhagen;104;3-1;3;0;0;1;1;0;2;0;1;7;9;2;2;7;0;0;6;14;0;0;0;1;0;0;0;0
+FC Fredericia x Brondby;104;0-2;0;0;0;2;0;1;2;6;1;4;0;3;1;8;1;4;13;10;1;0;0;1;0;0;0;0
+FC Copenhagen x Midtjylland;104;0-0;0;1;0;-1;0;0;2;1;5;1;2;8;2;3;2;6;2;5;0;0;1;2;0;0;0;0
+AGF Aarhus x Silkeborg IF;104;0-0;2;1;-2;-1;1;0;3;1;1;1;8;5;3;3;5;7;0;1;1;0;0;1;0;0;0;0
+Vejle x FC Nordsjaelland;104;0-3;0;2;0;1;0;0;1;4;4;2;0;5;4;8;3;5;3;3;0;0;2;0;0;0;0;0
+Randers FC x Viborg;104;2-1;2;1;0;0;2;0;2;0;3;2;5;3;5;2;5;3;6;5;2;0;0;2;0;0;0;0
+Odense BK x Sonderjyske;104;1-1;1;0;0;1;1;0;4;1;0;5;3;4;1;0;0;2;3;8;1;0;0;1;0;0;0;0
+Midtjylland x Randers FC;104;2-1;0;0;2;1;0;0;3;2;7;1;1;5;2;2;4;5;3;3;1;1;1;1;0;0;0;0
+Brondby x Odense BK;104;0-0;3;1;-3;-1;0;0;0;0;1;2;8;2;2;1;4;6;5;3;0;2;2;1;0;0;0;0
+FC Nordsjaelland x AGF Aarhus;104;1-2;0;0;1;2;0;0;0;1;3;0;1;2;1;3;5;1;8;2;0;0;1;2;0;0;0;0
+Silkeborg IF x Vejle;104;0-0;1;0;-1;0;0;0;0;3;0;1;2;1;1;6;3;3;5;1;0;0;4;2;0;0;0;0
+Viborg x FC Fredericia;104;2-1;1;1;1;0;0;0;3;1;5;3;4;12;3;1;4;5;1;1;0;0;0;0;0;0;0;0
+Sonderjyske x FC Copenhagen;104;0-0;0;1;0;-1;1;0;2;0;1;2;0;1;3;5;2;8;4;3;0;0;2;2;0;0;0;0
+Randers FC x FC Nordsjaelland;104;3-0;0;0;3;0;0;0;0;3;2;1;2;0;2;6;5;5;4;1;0;0;1;0;0;0;0;0
+AGF Aarhus x Brondby;104;1-0;1;0;0;0;0;0;6;0;0;2;4;7;0;4;1;4;5;4;2;0;0;3;0;0;0;0
+FC Copenhagen x Silkeborg IF;104;3-3;2;1;1;2;0;0;3;1;2;0;7;5;3;0;3;6;5;2;0;0;4;0;0;0;0;0
+Vejle x Sonderjyske;104;0-0;1;2;-1;-2;0;1;4;4;1;5;3;3;4;2;2;5;0;7;2;0;2;1;0;0;0;0
+Midtjylland x Viborg;104;2-0;0;0;2;0;0;1;0;2;5;1;1;2;0;0;12;2;0;4;2;1;2;1;0;0;0;0
+Odense BK x FC Fredericia;104;3-2;1;0;2;2;1;0;3;1;3;4;6;4;1;4;4;6;5;6;0;0;2;2;0;0;0;0
+FC Fredericia x Vejle;104;0-0;0;0;0;0;0;0;5;1;4;3;2;6;2;3;4;3;5;9;1;1;1;1;0;0;0;0
+Silkeborg IF x Odense BK;104;2-1;1;1;1;0;0;2;2;8;0;3;2;1;2;3;3;2;1;8;0;0;1;2;0;0;0;1
+FC Nordsjaelland x Midtjylland;104;0-0;1;0;-1;0;0;0;2;0;4;1;4;2;1;1;1;6;0;3;0;0;2;2;0;0;0;1
+Viborg x AGF Aarhus;104;1-2;1;2;0;0;0;1;3;2;4;2;6;1;4;6;2;6;2;3;0;1;2;2;0;0;0;0
+Brondby x FC Copenhagen;104;0-0;1;0;-1;0;0;1;1;1;1;0;4;1;2;3;4;1;2;4;1;1;2;1;0;0;0;0
+Sonderjyske x Randers FC;104;0-1;0;0;0;1;0;2;2;7;0;3;1;4;5;9;0;6;6;5;0;0;3;1;0;0;1;0
+Brondby x Midtjylland;104;1-3;0;0;1;3;0;0;0;3;3;1;0;3;1;9;8;7;9;6;1;2;0;1;0;0;0;0
+Randers FC x FC Copenhagen;104;1-5;0;4;1;1;0;0;0;3;1;2;2;1;10;2;2;2;4;3;2;0;0;1;0;0;0;0
+Odense BK x FC Nordsjaelland;104;1-2;1;0;0;2;1;0;1;2;0;0;5;3;0;1;1;4;5;3;1;2;0;2;0;0;0;0
+AGF Aarhus x FC Fredericia;104;4-1;2;0;2;1;0;0;4;0;3;1;4;12;1;2;10;7;5;2;0;1;0;0;0;0;0;0
+Silkeborg IF x Sonderjyske;104;0-2;0;0;0;2;4;0;4;1;5;1;2;2;2;1;2;7;7;2;0;1;0;2;0;0;0;0
+Vejle x Viborg;104;1-2;1;1;0;1;0;0;2;3;3;3;3;4;7;2;1;2;4;7;0;1;1;0;0;0;0;0
+FC Nordsjaelland x Viborg;104;1-0;1;0;0;0;0;0;2;1;1;2;4;4;2;4;0;3;1;3;1;0;1;3;0;0;0;0
+AGF Aarhus x Vejle;104;1-0;1;0;0;0;0;1;3;1;3;2;5;2;1;4;1;10;0;4;1;0;0;2;0;0;0;0
+Sonderjyske x Brondby;104;2-0;0;0;2;0;1;0;1;4;0;7;0;3;2;10;5;3;2;10;1;1;1;2;0;0;0;0
+FC Fredericia x Randers FC;104;1-0;1;0;0;0;1;0;2;3;1;8;4;0;1;6;2;2;2;9;0;2;1;1;0;0;0;0
+Espanyol x Real Oviedo;36;1-1;1;1;0;0;1;0;4;0;4;0;6;9;2;0;5;11;2;3;1;0;2;2;0;0;0;0
+Valencia x CD Alaves;36;3-2;0;1;3;1;0;1;4;1;6;1;1;6;3;2;10;8;3;4;1;2;0;3;0;0;0;2
+Sevilla x Rayo Vallecano;36;1-1;1;0;0;1;0;1;4;1;2;1;2;11;2;3;1;3;2;4;1;0;0;3;0;0;0;0
+Getafe x Real Betis;36;2-0;2;0;0;0;0;0;2;3;1;5;6;1;2;5;1;5;2;5;2;1;1;1;0;0;0;0
+Villarreal x Elche;36;2-1;2;0;0;1;0;0;1;0;3;6;7;5;2;4;2;5;5;6;1;0;0;1;0;0;0;0
+Athletic Bilbao x Barcelona;36;0-1;0;0;0;1;0;1;0;2;0;2;0;0;0;2;0;0;3;3;0;0;0;1;0;0;0;0
+Atletico Madrid x Real Sociedad;36;3-2;1;1;2;1;1;0;4;0;4;1;5;9;3;1;7;6;2;3;1;0;0;1;0;0;0;0
+Levante x Girona;36;1-1;0;0;1;1;0;1;2;1;0;2;2;8;3;4;3;2;4;16;0;1;2;1;0;0;1;0
+Osasuna x Mallorca;36;2-2;0;1;2;1;0;0;1;0;7;0;1;4;4;2;7;16;3;2;1;2;1;3;0;0;1;1
+Celta Vigo x Real Madrid;36;1-2;1;1;0;1;0;0;0;1;1;5;4;3;2;6;1;3;3;5;1;0;0;2;0;0;0;0
+Rayo Vallecano x Real Oviedo;36;3-0;1;0;2;0;2;0;5;0;7;2;5;8;0;3;5;4;2;3;0;1;0;1;0;0;0;0
+Real Madrid x Getafe;36;0-1;0;1;0;0;0;0;4;1;6;1;4;2;2;5;3;11;2;1;0;2;4;3;0;0;1;1
+Girona x Celta Vigo;36;1-2;1;0;0;2;2;0;4;6;6;0;3;2;3;1;5;7;3;0;0;1;2;1;0;0;0;0
+Real Betis x Sevilla;36;2-2;2;0;0;2;0;1;3;1;1;2;4;2;2;3;0;5;6;6;1;1;2;2;0;0;0;0
+Valencia x Osasuna;36;1-0;0;0;1;0;1;0;3;1;2;3;0;7;0;2;2;7;0;7;1;1;2;1;0;0;0;0
+Elche x Espanyol;36;2-2;1;1;1;1;0;0;2;1;1;0;4;3;3;2;8;6;3;3;0;1;1;4;0;0;0;1
+Real Oviedo x Atletico Madrid;36;0-1;0;0;0;1;0;1;6;1;2;2;2;7;0;5;4;3;3;6;1;1;1;1;0;0;0;0
+Mallorca x Real Sociedad;36;0-1;0;1;0;0;1;1;1;4;2;3;1;1;2;6;0;5;1;4;0;0;0;2;0;0;0;0
+Barcelona x Villarreal;36;4-1;2;0;2;1;0;0;1;1;2;1;7;5;0;2;6;6;2;4;0;0;2;1;0;0;0;0
+Rayo Vallecano x Athletic Bilbao;36;0-0;1;0;-1;0;1;0;2;0;3;0;7;6;0;0;3;3;0;0;1;0;1;0;0;0;0;0
+Levante x CD Alaves;36;2-0;0;0;2;0;0;0;3;5;7;1;1;2;5;7;6;17;2;3;0;1;1;4;0;0;0;1
+CD Alaves x Girona;36;2-2;1;1;1;1;0;0;0;4;7;2;4;3;3;3;4;9;4;2;1;0;1;2;0;0;0;0
+Villarreal x Valencia;36;2-1;2;1;0;0;0;0;4;2;1;2;7;3;2;2;0;4;2;4;2;2;0;2;0;0;0;0
+Celta Vigo x Mallorca;36;2-0;0;0;2;0;1;0;4;0;3;2;4;5;0;1;7;9;0;0;0;1;1;4;0;0;0;0
+Barcelona x Levante;36;3-0;2;0;1;0;1;0;4;1;9;5;5;6;2;1;7;7;0;2;1;1;1;0;0;0;0;0
+Getafe x Sevilla;36;0-0;0;0;0;0;0;0;0;0;2;2;1;1;0;1;2;2;2;4;1;0;0;1;1;0;0;0
+Atletico Madrid x Espanyol;36;4-2;1;1;3;1;0;0;3;0;2;3;5;6;2;2;8;3;2;5;0;0;0;1;0;0;0;0
+Osasuna x Real Madrid;36;2-1;1;0;1;1;0;0;2;5;1;2;2;10;4;5;2;3;3;5;1;1;1;3;0;0;0;0
+Real Betis x Rayo Vallecano;36;1-1;1;1;0;0;2;1;2;2;1;3;2;8;3;3;2;4;1;6;2;2;2;1;0;0;0;0
+Real Sociedad x Real Oviedo;36;3-3;0;0;3;3;2;0;4;2;3;4;2;2;2;5;9;5;7;3;1;0;1;1;0;0;0;0
+Athletic Bilbao x Elche;36;2-1;0;0;2;1;0;0;0;1;0;0;0;0;1;0;0;0;2;0;0;2;0;1;0;0;0;0
+Levante x Villarreal;36;0-1;0;0;0;1;1;0;1;1;2;1;1;1;1;4;3;15;6;6;2;0;1;4;0;0;0;0
+Girona x Barcelona;36;2-1;0;0;2;1;0;0;1;1;2;6;2;1;3;10;10;3;4;12;0;1;0;1;0;0;1;0
+Mallorca x Real Betis;36;1-2;0;2;1;0;0;0;4;2;3;1;3;3;6;4;2;8;4;5;1;2;3;1;0;0;0;0
+Levante x Valencia;36;0-2;0;0;0;2;0;0;1;2;2;0;1;2;0;2;0;6;4;1;0;1;2;1;0;0;1;0
+Rayo Vallecano x Atletico Madrid;36;3-0;2;0;1;0;0;0;3;3;1;5;9;4;0;3;3;0;4;2;0;1;1;2;0;0;0;0
+Real Oviedo x Athletic Bilbao;36;1-2;1;0;0;2;1;0;1;0;1;0;2;3;0;0;0;4;0;0;1;0;1;0;0;0;0;0
+Real Madrid x Real Sociedad;36;4-1;3;1;1;0;0;0;2;1;2;5;6;3;2;3;4;3;3;8;1;0;0;1;0;0;0;0
+Sevilla x CD Alaves;36;1-1;1;0;0;1;0;0;0;1;0;2;2;2;0;3;1;0;3;8;1;0;3;0;1;0;0;0
+Getafe x Villarreal;36;2-1;1;0;1;1;0;1;0;1;3;2;2;3;0;0;2;0;3;6;1;1;0;2;0;0;0;0
+Espanyol x Celta Vigo;36;2-2;0;1;2;1;1;0;1;0;1;2;1;2;3;3;4;4;5;6;0;0;1;0;0;0;0;0
+Elche x Osasuna;36;0-0;0;0;0;0;0;0;3;1;7;2;2;5;1;1;3;8;1;3;1;1;1;3;0;0;0;0
+Villarreal x Espanyol;36;4-1;2;0;2;1;2;1;2;3;3;5;2;5;1;3;4;3;3;4;1;1;2;2;0;0;0;0
+Valencia x Real Madrid;36;0-2;0;0;0;2;0;0;5;5;0;3;0;3;3;3;0;4;5;2;0;0;1;1;0;0;0;0
+Atletico Madrid x Real Betis;36;0-1;0;1;0;0;2;0;4;2;3;1;4;4;4;2;2;1;1;2;1;0;2;1;0;0;0;0
+Athletic Bilbao x Levante;36;4-2;2;0;2;2;0;0;0;1;0;2;0;0;0;1;0;0;5;2;0;0;0;1;0;1;0;0
+Sevilla x Girona;36;1-1;0;1;1;0;0;0;1;4;4;3;1;2;6;3;3;6;1;7;1;0;1;3;0;0;0;0
+CD Alaves x Getafe;36;0-2;0;0;0;2;0;1;3;2;3;1;2;5;1;8;3;3;6;6;0;2;2;2;0;0;0;0
+Real Sociedad x Elche;36;0-0;2;1;-2;-1;0;1;1;2;1;2;4;2;3;5;3;6;3;2;0;2;0;2;0;0;0;0
+Barcelona x Mallorca;36;3-0;1;0;2;0;2;0;4;2;8;1;3;6;2;2;7;11;2;3;0;0;0;0;0;0;0;0
+Celta Vigo x Osasuna;36;1-2;0;1;1;1;1;0;3;1;4;2;1;5;2;0;4;9;2;6;0;1;2;1;0;0;0;0
+Mallorca x Sevilla;36;4-1;1;1;3;0;1;1;1;4;3;4;3;3;4;4;8;1;2;6;1;0;0;1;0;0;0;0
+Athletic Bilbao x Real Sociedad;36;1-1;0;1;1;0;0;0;0;2;0;1;0;0;7;0;0;0;0;2;0;1;0;1;0;0;0;1
+Getafe x Celta Vigo;36;0-0;0;0;0;0;1;0;4;0;1;3;2;2;0;0;0;6;1;4;1;1;0;1;0;0;0;0
+Real Betis x Valencia;36;0-0;1;1;-1;-1;0;2;1;4;2;1;2;5;3;7;2;6;2;4;0;0;0;3;0;0;0;0
+Real Madrid x Rayo Vallecano;36;2-1;1;0;1;1;2;0;4;2;5;2;3;4;1;5;5;6;4;2;0;0;2;7;0;0;0;2
+Elche x Barcelona;36;1-3;1;2;0;1;1;0;1;3;1;5;2;3;7;12;2;3;4;10;1;0;1;1;0;0;0;0
+Levante x Atletico Madrid;36;0-0;0;0;0;0;0;4;1;4;3;3;0;2;1;4;2;6;3;2;0;1;2;0;0;0;0;0
+Osasuna x Villarreal;36;0-0;2;1;-2;-1;2;0;4;1;2;1;6;6;4;0;1;4;2;1;1;1;1;1;0;0;0;0
+Real Oviedo x Girona;36;0-0;0;0;0;0;0;1;1;1;3;3;1;0;1;1;4;4;1;7;1;0;0;1;0;0;0;0
+Espanyol x CD Alaves;36;1-2;1;1;0;1;0;0;0;0;4;2;2;2;6;1;3;5;3;3;0;1;0;0;0;0;0;0
+Girona x Getafe;36;1-1;0;0;1;1;0;0;2;2;1;2;1;3;0;4;4;7;3;2;1;1;4;2;0;0;0;0
+CD Alaves x Real Betis;36;2-1;1;0;1;1;0;0;2;2;4;2;7;3;3;6;4;5;2;8;0;1;1;0;0;0;0;0
+Real Sociedad x Celta Vigo;36;3-1;1;0;2;1;1;1;1;5;1;4;2;3;1;5;5;3;4;8;1;1;0;0;1;0;0;0
+Barcelona x Real Oviedo;36;3-0;0;0;3;0;0;0;3;0;7;1;1;4;2;4;9;4;1;4;1;2;0;0;0;0;0;0
+Atletico Madrid x Mallorca;36;3-0;1;0;2;0;2;1;6;2;4;1;5;3;0;2;5;7;1;3;0;0;2;1;0;0;0;0
+Villarreal x Real Madrid;36;0-2;0;0;0;2;1;0;4;2;2;4;0;4;2;5;1;3;4;5;1;0;2;1;0;0;0;0
+Sevilla x Athletic Bilbao;36;2-1;1;1;1;0;0;0;2;2;3;3;7;3;3;5;5;0;1;7;0;1;2;0;0;0;0;0
+Valencia x Espanyol;36;3-2;1;0;2;2;0;0;1;3;1;4;2;3;1;3;6;2;7;9;0;1;1;4;0;0;0;0
+Rayo Vallecano x Osasuna;36;1-3;0;1;1;2;0;0;1;1;3;2;0;1;4;5;5;6;5;4;0;1;2;1;0;0;0;0
+Levante x Elche;36;3-2;0;1;3;1;4;0;5;1;4;0;0;17;3;1;10;6;2;2;1;0;1;3;0;0;0;0
+Elche x Sevilla;36;0-0;1;0;-1;0;0;0;4;3;5;4;3;2;2;8;5;3;8;9;1;0;2;1;0;0;0;0
+Real Sociedad x Barcelona;36;2-1;1;0;1;1;0;0;2;4;4;4;5;0;7;8;4;1;6;8;1;0;2;3;0;0;1;0
+Celta Vigo x Rayo Vallecano;36;3-0;1;0;2;0;1;0;5;4;0;3;4;2;1;6;6;2;2;5;1;0;2;3;0;0;0;1
+Atletico Madrid x CD Alaves;36;1-0;0;0;1;0;0;1;3;1;3;5;4;12;0;2;3;6;0;6;1;1;0;0;0;0;0;0
+Getafe x Valencia;36;0-1;0;0;0;1;0;0;4;1;5;2;4;7;0;1;0;8;2;5;0;0;2;3;0;0;0;0
+Real Betis x Villarreal;36;2-0;0;0;2;0;0;2;1;2;1;1;3;4;2;1;5;5;2;5;0;1;3;1;0;0;0;1
+Osasuna x Real Oviedo;36;3-2;1;1;2;1;0;0;2;4;1;2;4;5;4;3;5;6;3;5;0;3;1;1;0;0;1;0
+Mallorca x Athletic Bilbao;36;3-2;2;2;1;0;0;1;0;3;3;4;6;1;8;7;6;9;5;3;1;4;0;1;0;0;0;1
+Real Madrid x Levante;36;2-0;0;0;2;0;1;0;2;0;6;0;1;6;0;8;12;10;0;2;2;1;0;0;0;0;0;0
+Espanyol x Girona;36;0-0;0;2;0;-2;0;0;2;2;3;2;0;1;3;1;2;12;3;2;1;1;4;3;0;0;0;0
+Sevilla x Celta Vigo;36;0-1;0;0;0;1;1;0;5;0;1;1;0;4;3;2;2;1;5;0;0;1;2;2;0;0;0;0
+Levante x Espanyol;36;1-1;0;0;1;1;0;0;1;0;3;3;2;3;1;7;2;3;3;9;0;1;0;0;0;0;0;0
+Rayo Vallecano x Mallorca;36;2-1;2;1;0;0;0;0;3;2;3;3;5;6;3;2;2;3;0;5;0;2;1;3;0;0;1;0
+Valencia x Elche;36;1-1;0;0;1;1;1;1;5;3;3;3;2;6;0;1;3;6;2;3;0;0;2;3;0;0;0;0
+Girona x Osasuna;36;1-0;1;0;0;0;1;0;1;0;1;1;2;3;0;7;4;1;0;5;0;0;2;4;0;0;1;0
+Villarreal x CD Alaves;36;3-1;0;0;3;1;0;0;0;2;1;4;0;2;2;2;7;5;4;10;0;2;0;0;0;0;0;0
+Real Oviedo x Real Betis;36;0-0;0;0;0;0;1;0;4;0;1;2;1;9;1;3;3;2;6;6;0;0;3;1;0;0;0;0
+Getafe x Real Sociedad;36;1-2;0;1;1;1;0;0;1;2;1;2;2;1;2;1;2;2;6;6;1;0;1;1;0;0;0;0
+Real Sociedad x Atletico Madrid;36;1-1;0;0;1;1;1;1;6;3;0;3;3;6;0;3;7;4;3;5;1;1;2;1;0;0;0;0
+Mallorca x Girona;36;1-2;0;1;1;1;0;1;1;4;2;2;1;2;3;3;3;5;3;2;1;0;1;1;0;0;0;0
+CD Alaves x Real Oviedo;36;1-1;0;0;1;1;0;2;0;5;6;2;2;7;2;6;6;5;5;6;1;1;1;1;0;0;1;1
+Real Madrid x Real Betis;36;5-1;1;0;4;1;2;0;3;4;2;4;2;9;0;5;12;2;6;3;0;1;1;0;0;0;0;0
+Sevilla x Levante;36;0-3;0;1;0;2;0;0;0;0;5;1;4;1;3;1;5;7;4;2;2;1;1;3;0;0;0;0
+Espanyol x Barcelona;36;0-2;0;0;0;2;4;0;4;1;1;6;3;4;1;2;4;3;7;8;0;0;1;0;0;0;0;0
+Elche x Villarreal;36;1-3;1;2;0;1;0;0;2;2;4;0;2;7;5;4;1;5;2;5;0;1;3;2;0;0;0;0
+Osasuna x Athletic Bilbao;36;1-1;1;0;0;1;0;0;1;4;0;5;5;5;2;4;0;2;5;6;0;1;3;2;0;0;0;0
+Celta Vigo x Valencia;36;4-1;1;0;3;1;1;2;2;4;0;0;4;3;1;7;7;4;5;4;0;0;1;3;0;0;0;0
+Rayo Vallecano x Getafe;36;1-1;1;0;0;1;2;0;3;2;0;0;3;8;2;5;2;2;3;3;0;1;3;3;0;0;0;0`;
+
+const lines = raw.trim().split('\n');
+const headers = lines[0].split(';');
+const allData = lines.slice(1).map(l => {
+  const v = l.split(';');
+  const obj = {};
+  headers.forEach((h,i) => { obj[h] = v[i]; });
+  ['Gols_C_PT','Gols_V_PT','Gols_C_ST','Gols_V_ST','C10_Casa','C10_Vis',
+   'Canto_C_PT','Canto_V_PT','Canto_C_ST','Canto_V_ST',
+   'On_C_PT','Off_C_PT','On_V_PT','Off_V_PT','On_C_ST','Off_C_ST','On_V_ST','Off_V_ST',
+   'Amarelo_Casa_PT','Amarelo_Vis_PT','Amarelo_Casa_ST','Amarelo_Vis_ST',
+   'Vermelho_Casa_PT','Vermelho_Vis_PT','Vermelho_Casa_ST','Vermelho_Vis_ST'
+  ].forEach(k => { obj[k] = parseFloat(obj[k]) || 0; });
+  const parts = obj.Jogo.split(' x ');
+  obj.casa = parts[0].trim();
+  obj.vis = parts[1] ? parts[1].trim() : '';
+  obj.gols_casa = obj.Gols_C_PT + obj.Gols_C_ST;
+  obj.gols_vis  = obj.Gols_V_PT + obj.Gols_V_ST;
+  obj.cant_casa = obj.Canto_C_PT + obj.Canto_C_ST;
+  obj.cant_vis  = obj.Canto_V_PT + obj.Canto_V_ST;
+  obj.on_casa   = obj.On_C_PT + obj.On_C_ST;
+  obj.on_vis    = obj.On_V_PT + obj.On_V_ST;
+  obj.off_casa  = obj.Off_C_PT + obj.Off_C_ST;
+  obj.off_vis   = obj.Off_V_PT + obj.Off_V_ST;
+  obj.am_casa   = obj.Amarelo_Casa_PT + obj.Amarelo_Casa_ST;
+  obj.am_vis    = obj.Amarelo_Vis_PT  + obj.Amarelo_Vis_ST;
+  obj.vm_casa   = obj.Vermelho_Casa_PT + obj.Vermelho_Casa_ST;
+  obj.vm_vis    = obj.Vermelho_Vis_PT  + obj.Vermelho_Vis_ST;
+  return obj;
+});
+
+// Active data (filtered by league)
+let data = [...allData];
+let currentLiga = 'all';
+
+const LIGA_INFO = {
+  'all': { name: 'Todas as Ligas', flag: '🌍' },
+  '35':  { name: 'Premier League', flag: '🏴' },
+  '39':  { name: 'Ligue 1 — França', flag: '🇫🇷' },
+  '104': { name: 'Superliga — Dinamarca', flag: '🇩🇰' },
+  '36':  { name: 'La Liga — Espanha', flag: '🇪🇸' },
+};
+
+// Retorna o total de times únicos na liga atual
+function rankingSize() {
+  return [...new Set(data.flatMap(d => [d.casa, d.vis]))].length;
+}
+
+function setLiga(liga) {
+  currentLiga = liga;
+  data = liga === 'all' ? [...allData] : allData.filter(d => d.Liga === liga);
+
+  // Update buttons
+  ['all','35','39','104','36'].forEach(k => {
+    const btn = document.getElementById('liga-btn-'+k);
+    btn.classList.toggle('active', k===liga);
+    btn.setAttribute('aria-pressed', k===liga ? 'true' : 'false');
+  });
+
+  // Update topbar label
+  const info = LIGA_INFO[liga];
+  document.getElementById('topbar-title').textContent = '';
+  document.getElementById('topbar-title').innerHTML =
+    `${info.flag} ${info.name} — <span style="color:var(--accent)">Análise Estatística</span>`;
+  document.getElementById('pill-count').textContent = data.length;
+
+  // Update nav badges with correct team count
+  const nTeams = rankingSize();
+  document.querySelectorAll('.nav-item .badge').forEach(b => {
+    if (!b.style.background) b.textContent = nTeams; // só os badges padrão (não os NEW/HOT)
+  });
+
+  // Reset all team selections & filters
+  Object.keys(selectedTeam).forEach(k => selectedTeam[k] = null);
+  finTeam = null;
+  finFilter = 'on-pt';
+  cardFilter = 'total';
+  c10Filter  = 'todos';
+
+  // Clear detail panels
+  ['ov-detail','gols-detail','cant-detail','fin-detail','card-detail','c10-detail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
+  // Rebuild all views
+  buildOverview();
+  buildGols();
+  buildEscanteios();
+  buildFinalizacoes();
+  buildCartoes();
+  buildC10();
+  buildUnderRanking();
+
+  // Re-activate current nav view
+  const activeNav = document.querySelector('.nav-item.active');
+  const contentEl = document.getElementById('content');
+  contentEl.scrollTop = 0;
+}
+
+// ===== STATE =====
+const selectedTeam = {};
+
+// ===== TEAM AGGREGATOR =====
+function teamStats(valFn) {
+  const map = {};
+  data.forEach(d => {
+    const [hv, av] = valFn(d);
+    map[d.casa] = (map[d.casa]||0) + hv;
+    map[d.vis]  = (map[d.vis] ||0) + av;
+  });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+
+// ===== VIEW CONFIG =====
+const VIEW_CFG = {
+  overview: {
+    label:'Gols', accent:'--accent',
+    val:(d,h)=>h?d.gols_casa:d.gols_vis,
+    pt:(d,h)=>h?d.Gols_C_PT:d.Gols_V_PT,
+    st:(d,h)=>h?d.Gols_C_ST:d.Gols_V_ST,
+    extra:(d,h)=>[
+      {l:'Escanteios', v:h?d.cant_casa:d.cant_vis},
+      {l:'Fin.Alvo',   v:h?d.on_casa:d.on_vis},
+      {l:'Amarelos',   v:h?d.am_casa:d.am_vis},
+    ]
+  },
+  gols: {
+    label:'Gols', accent:'--accent',
+    val:(d,h)=>h?d.gols_casa:d.gols_vis,
+    pt:(d,h)=>h?d.Gols_C_PT:d.Gols_V_PT,
+    st:(d,h)=>h?d.Gols_C_ST:d.Gols_V_ST,
+    extra:(d,h)=>[]
+  },
+  escanteios: {
+    label:'Escanteios', accent:'--accent4',
+    val:(d,h)=>h?d.cant_casa:d.cant_vis,
+    pt:(d,h)=>h?d.Canto_C_PT:d.Canto_V_PT,
+    st:(d,h)=>h?d.Canto_C_ST:d.Canto_V_ST,
+    extra:(d,h)=>[]
+  },
+  finalizacoes: {
+    label:'Fin. Alvo', accent:'--accent3',
+    val:(d,h)=>h?d.on_casa:d.on_vis,
+    pt:(d,h)=>h?d.On_C_PT:d.On_V_PT,
+    st:(d,h)=>h?d.On_C_ST:d.On_V_ST,
+    extra:(d,h)=>[{l:'Off Target',v:h?d.off_casa:d.off_vis}]
+  },
+  cartoes: {
+    label:'Amarelos', accent:'--accent2',
+    val:(d,h)=>h?d.am_casa:d.am_vis,
+    pt:(d,h)=>h?d.Amarelo_Casa_PT:d.Amarelo_Vis_PT,
+    st:(d,h)=>h?d.Amarelo_Casa_ST:d.Amarelo_Vis_ST,
+    extra:(d,h)=>[{l:'Vermelhos',v:h?d.vm_casa:d.vm_vis}]
+  },
+  c10: {
+    label:'Cantos 10min', accent:'--accent4',
+    val:(d,h)=>h?d.C10_Casa:d.C10_Vis,
+    pt:(d,h)=>h?d.C10_Casa:d.C10_Vis,
+    st:(d,h)=>0,
+    extra:(d,h)=>[
+      {l:'Total partida', v: d.C10_Casa + d.C10_Vis},
+      {l:'Oponente',      v: h?d.C10_Vis:d.C10_Casa},
+    ]
+  }
+};
+
+// ===== RANKING TABLE =====
+function makeRankingTable(tableId, rows, accentVar, detailId, viewId) {
+  const table = document.getElementById(tableId);
+  if (!rows || !rows.length) {
+    table.innerHTML = `<tbody><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Sem dados para esta seleção.</td></tr></tbody>`;
+    return;
+  }
+  const max = rows[0][1];
+  table.innerHTML = `<thead><tr>
+    <th>#</th>
+    <th>Time</th>
+    <th></th>
+    <th style="text-align:right">Total</th>
+  </tr></thead><tbody>` +
+  rows.map(([team, val], i) => {
+    const pct = Math.round((val/max)*100);
+    const posClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<tr data-team="${team}" onclick="selectTeam('${CSS.escape(team)}','${detailId}','${tableId}','${viewId}')">
+      <td><span class="rank-pos ${posClass}">${i+1}</span></td>
+      <td>
+        <button class="rank-team-btn">
+          ${team}
+          <span class="click-hint">▼ ver jogos</span>
+        </button>
+      </td>
+      <td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:var(${accentVar})"></div></div></td>
+      <td><span class="rank-val" style="color:var(${accentVar})">${val}</span></td>
+    </tr>`;
+  }).join('') + '</tbody>';
+}
+
+// ===== SELECT TEAM =====
+function selectTeam(team, detailId, tableId, viewId) {
+  // unescape team name (CSS.escape replaces spaces but we just need the data-team attr)
+  const table = document.getElementById(tableId);
+  const clickedRow = table.querySelector(`[data-team="${team}"]`) || 
+    [...table.querySelectorAll('[data-team]')].find(r=>r.dataset.team===team);
+
+  const detailEl = document.getElementById(detailId);
+  const cfg = VIEW_CFG[viewId];
+
+  // Toggle off
+  if (selectedTeam[detailId] === team) {
+    selectedTeam[detailId] = null;
+    table.querySelectorAll('tr').forEach(r=>r.classList.remove('team-selected'));
+    detailEl.innerHTML = '';
+    if (viewId === 'finalizacoes') { finTeam = null; renderFinGrid(); }
+    return;
+  }
+
+  selectedTeam[detailId] = team;
+  table.querySelectorAll('tr').forEach(r=>r.classList.remove('team-selected'));
+  if (clickedRow) clickedRow.classList.add('team-selected');
+
+  // Hook: if this is the finalizações ranking, update finTeam and re-render grid
+  if (viewId === 'finalizacoes') {
+    finTeam = team;
+    renderFinGrid();
+  }
+
+  const games = data.filter(d=>d.casa===team||d.vis===team);
+  let wins=0,draws=0,losses=0,totalVal=0,totalPT=0,totalST=0;
+
+  games.forEach(d=>{
+    const h = d.casa===team;
+    totalVal += cfg.val(d,h);
+    totalPT  += cfg.pt(d,h);
+    totalST  += cfg.st(d,h);
+    const [gh,ga] = d.Placar_FT.split('-').map(Number);
+    const my = h?gh:ga, op = h?ga:gh;
+    if(my>op) wins++; else if(my===op) draws++; else losses++;
+  });
+
+  detailEl.innerHTML = `
+    <div class="team-detail-panel">
+      <div class="tdp-header">
+        <div>
+          <div class="tdp-team-name">${team}</div>
+          <div class="tdp-team-sub">${games.length} jogo${games.length>1?'s':''} nesta rodada · clique novamente para fechar</div>
+        </div>
+        <div class="tdp-meta">
+          <span class="tdp-tag win">✅ ${wins}V</span>
+          <span class="tdp-tag draw">⬛ ${draws}E</span>
+          <span class="tdp-tag loss">❌ ${losses}D</span>
+          <button class="tdp-close" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--accent);border-color:rgba(0,229,160,0.3);" onclick="goToScout('${team.replace(/'/g,"\\'")}')">🔎 Scout</button>
+          <button class="tdp-close" onclick="clearDetail('${detailId}','${tableId}')">✕</button>
+        </div>
+      </div>
+
+      <div class="tdp-summary">
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">${cfg.label} Total</span>
+          <span class="tdp-stat-val" style="color:var(${cfg.accent})">${totalVal}</span>
+        </div>
+        ${viewId !== 'c10' ? `
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">1° Tempo</span>
+          <span class="tdp-stat-val">${totalPT}</span>
+        </div>
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">2° Tempo</span>
+          <span class="tdp-stat-val">${totalST}</span>
+        </div>` : `
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">Jogos com canto</span>
+          <span class="tdp-stat-val" style="color:var(--accent4)">${games.filter(d=>{ const h=d.casa===team; return cfg.val(d,h)>0; }).length}</span>
+        </div>
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">Jogos sem canto</span>
+          <span class="tdp-stat-val" style="color:var(--accent2)">${games.filter(d=>{ const h=d.casa===team; return cfg.val(d,h)===0; }).length}</span>
+        </div>`}
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">Média / jogo</span>
+          <span class="tdp-stat-val">${(totalVal/games.length).toFixed(1)}</span>
+        </div>
+        <div class="tdp-stat">
+          <span class="tdp-stat-label">Aproveitamento</span>
+          <span class="tdp-stat-val" style="color:${wins>losses?'var(--accent)':losses>wins?'var(--accent2)':'var(--accent3)'}">${Math.round((wins*3+draws)/(games.length*3)*100)}%</span>
+        </div>
+      </div>
+
+      <div class="tdp-body">
+        <div class="tdp-games-title">${viewId==='c10'?'🚩 CANTOS NOS 10 MIN — JOGO A JOGO':'🔍 JOGOS DO TIME — DETALHAMENTO POR PERÍODO'}</div>
+        ${games.map((d,i) => {
+          const h = d.casa===team;
+          const myVal = cfg.val(d,h);
+          const myPT  = cfg.pt(d,h);
+          const myST  = cfg.st(d,h);
+          const oppVal= cfg.val(d,!h);
+          const extra = cfg.extra(d,h);
+          const [gh,ga] = d.Placar_FT.split('-').map(Number);
+          const my=h?gh:ga, op=h?ga:gh;
+          const resultColor = my>op?'var(--accent)':my===op?'var(--accent3)':'var(--accent2)';
+          const totalMatch = d.C10_Casa + d.C10_Vis;
+
+          return `<div class="tdp-game-row" style="animation-delay:${i*0.06}s">
+            <span class="tdp-role ${h?'casa':'vis'}">${h?'CASA':'VISIT.'}</span>
+            <span class="tdp-game-name">${d.Jogo}</span>
+            <span class="tdp-game-score" style="color:${resultColor}">${d.Placar_FT}</span>
+            <div class="tdp-game-stats">
+              <div class="tdp-gs">
+                <span class="tdp-gs-label">${cfg.label}</span>
+                <span class="tdp-gs-val" style="color:var(${cfg.accent})">${myVal}</span>
+              </div>
+              ${viewId !== 'c10' ? `
+              <div class="tdp-gs">
+                <span class="tdp-gs-label">PT</span>
+                <span class="tdp-gs-val">${myPT}</span>
+              </div>
+              <div class="tdp-gs">
+                <span class="tdp-gs-label">ST</span>
+                <span class="tdp-gs-val">${myST}</span>
+              </div>` : `
+              <div class="tdp-gs">
+                <span class="tdp-gs-label">Opon.10m</span>
+                <span class="tdp-gs-val" style="color:var(--muted)">${oppVal}</span>
+              </div>
+              <div class="tdp-gs">
+                <span class="tdp-gs-label">Total jogo</span>
+                <span class="tdp-gs-val" style="color:${totalMatch>=2?'var(--accent4)':'var(--muted)'}">${totalMatch}${totalMatch>=2?' ✔':''}</span>
+              </div>`}
+              ${viewId !== 'c10' ? `<div class="tdp-gs" title="Adversário">
+                <span class="tdp-gs-label">Opon.</span>
+                <span class="tdp-gs-val" style="color:var(--muted)">${oppVal}</span>
+              </div>` : ''}
+              ${extra.map(e=>`<div class="tdp-gs">
+                <span class="tdp-gs-label">${e.l}</span>
+                <span class="tdp-gs-val">${e.v}</span>
+              </div>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  setTimeout(()=>detailEl.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+function clearDetail(detailId, tableId) {
+  const key = Object.keys(selectedTeam).find(k=>k===detailId);
+  if(key) selectedTeam[key] = null;
+  document.getElementById(detailId).innerHTML = '';
+  document.getElementById(tableId).querySelectorAll('tr').forEach(r=>r.classList.remove('team-selected'));
+  // Reset finTeam if clearing fin panel
+  if (detailId === 'fin-detail') {
+    finTeam = null;
+    renderFinGrid();
+  }
+}
+
+// ===== MATCH CARDS =====
+function makeMatchCard(d, hVal, aVal, subs) {
+  return `<div class="stat-card">
+    <div class="card-match">${d.Jogo}<span class="score-badge">${d.Placar_FT}</span></div>
+    <div class="teams-row">
+      <div class="team-block"><div class="team-name">${d.casa}</div><div class="team-val home">${hVal}</div></div>
+      <div class="vs-sep">x</div>
+      <div class="team-block"><div class="team-name">${d.vis}</div><div class="team-val away">${aVal}</div></div>
+    </div>
+    <div class="sub-stats">${subs.map(s=>`<div class="sub-stat"><div class="sub-label">${s.l}</div><div class="sub-val">${s.v}</div></div>`).join('')}</div>
+  </div>`;
+}
+
+function makeGrid(id, fn) {
+  document.getElementById(id).innerHTML = data.map((d,i)=>`<div style="animation-delay:${i*0.03}s">${fn(d)}</div>`).join('');
+}
+
+// ===== BUILD =====
+function buildOverview() {
+  const tG = data.reduce((s,d)=>s+d.gols_casa+d.gols_vis,0);
+  const tC = data.reduce((s,d)=>s+d.cant_casa+d.cant_vis,0);
+  const tO = data.reduce((s,d)=>s+d.on_casa+d.on_vis,0);
+  const tA = data.reduce((s,d)=>s+d.am_casa+d.am_vis,0);
+  const tV = data.reduce((s,d)=>s+d.vm_casa+d.vm_vis,0);
+
+  document.getElementById('ov-grid').innerHTML=[
+    {l:'Total de Gols',v:tG,s:`Média: ${(tG/data.length).toFixed(1)}/jogo`,c:'c-green'},
+    {l:'Escanteios',v:tC,s:`Média: ${(tC/data.length).toFixed(1)}/jogo`,c:'c-blue'},
+    {l:'Finalizações no Alvo',v:tO,s:`${data.length} jogos`,c:'c-yellow'},
+    {l:'Cartões Amarelos',v:tA,s:`Vermelhos: ${tV}`,c:'c-red'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div><div class="ov-val ${c.c}">${c.v}</div><div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  const r = teamStats(d=>[d.gols_casa,d.gols_vis]).slice(0,rankingSize());
+  makeRankingTable('ov-ranking',r,'--accent','ov-detail','overview');
+  makeGrid('ov-matches', d=>makeMatchCard(d,d.gols_casa,d.gols_vis,[
+    {l:'Gols Casa',v:`${d.Gols_C_PT}+${d.Gols_C_ST}`},{l:'Gols Visit.',v:`${d.Gols_V_PT}+${d.Gols_V_ST}`},
+    {l:'Cant. Total',v:d.cant_casa+d.cant_vis},{l:'Amarelos',v:d.am_casa+d.am_vis},
+  ]));
+}
+
+function buildGols() {
+  // KPIs
+  const totGolsPT  = data.reduce((s,d)=>s+d.Gols_C_PT+d.Gols_V_PT,0);
+  const totGolsST  = data.reduce((s,d)=>s+d.Gols_C_ST+d.Gols_V_ST,0);
+  const totGols    = totGolsPT + totGolsST;
+  const jogos0x0   = data.filter(d=>d.gols_casa+d.gols_vis===0).length;
+  const jogosBTTS  = data.filter(d=>d.gols_casa>0 && d.gols_vis>0).length;
+  const jogosOver2 = data.filter(d=>d.gols_casa+d.gols_vis>=3).length;
+
+  document.getElementById('gols-kpis').innerHTML = [
+    {l:'Total de Gols',      v:totGols,   s:`Média: ${(totGols/data.length).toFixed(2)}/jogo`,           c:'c-green'},
+    {l:'Gols no 1° Tempo',   v:totGolsPT, s:`${Math.round(totGolsPT/totGols*100)}% dos gols`,            c:'c-green'},
+    {l:'Ambos Marcam (BTTS)',v:jogosBTTS, s:`${Math.round(jogosBTTS/data.length*100)}% das partidas`,    c:'c-yellow'},
+    {l:'Over 2.5 Gols',      v:jogosOver2,s:`${Math.round(jogosOver2/data.length*100)}% das partidas`,   c:'c-blue'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div><div class="ov-val ${c.c}">${c.v}</div><div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  makeRankingTable('gols-ranking',teamStats(d=>[d.gols_casa,d.gols_vis]).slice(0,rankingSize()),'--accent','gols-detail','gols');
+  makeGrid('gols-grid',d=>makeMatchCard(d,d.gols_casa,d.gols_vis,[
+    {l:'Casa PT',v:d.Gols_C_PT},{l:'Casa ST',v:d.Gols_C_ST},
+    {l:'Vis PT',v:d.Gols_V_PT},{l:'Vis ST',v:d.Gols_V_ST},
+  ]));
+  generateGolsInsights();
+}
+
+// ===== INSIGHTS GOLS =====
+function generateGolsInsights() {
+  const THRESH = 0.75;
+  const MIN    = 2;
+  const insights = [];
+  const teams = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  teams.forEach(team => {
+    const emCasa   = data.filter(d => d.casa === team);
+    const foraCasa = data.filter(d => d.vis  === team);
+
+    const analyze = (jogos, getPT, getST, local) => {
+      if (jogos.length < MIN) return;
+      const n = jogos.length;
+      const totalGols = jogos.reduce((s,d) => s + getPT(d) + getST(d), 0);
+      const media = totalGols / n;
+
+      // Marca no 1° tempo
+      const nMarcaPT = jogos.filter(d => getPT(d) >= 1).length;
+      if (nMarcaPT / n >= THRESH) insights.push({
+        emoji: '⚽🕐', tag: 'bate', tagLabel: `⚽ Marca no 1°T`,
+        text: `<strong>${team}</strong> marcou no 1° Tempo em <strong>${nMarcaPT} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMarcaPT/n*100), label: `das partidas ${local}`, sort: nMarcaPT/n
+      });
+
+      // Não marca no 1° tempo
+      const nNaoPT = jogos.filter(d => getPT(d) === 0).length;
+      if (nNaoPT / n >= THRESH) insights.push({
+        emoji: '⚽💤', tag: 'nao-bate', tagLabel: `💤 Sem Gol no 1°T`,
+        text: `<strong>${team}</strong> <u>não</u> marcou no 1° Tempo em <strong>${nNaoPT} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nNaoPT/n*100), label: `das partidas ${local}`, sort: nNaoPT/n
+      });
+
+      // Marca no 2° tempo
+      const nMarcaST = jogos.filter(d => getST(d) >= 1).length;
+      if (nMarcaST / n >= THRESH) insights.push({
+        emoji: '⚽🕑', tag: 'bate', tagLabel: `⚽ Marca no 2°T`,
+        text: `<strong>${team}</strong> marcou no 2° Tempo em <strong>${nMarcaST} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMarcaST/n*100), label: `das partidas ${local}`, sort: nMarcaST/n
+      });
+
+      // Não marca no 2° tempo
+      const nNaoST = jogos.filter(d => getST(d) === 0).length;
+      if (nNaoST / n >= THRESH) insights.push({
+        emoji: '💤🕑', tag: 'nao-bate', tagLabel: `💤 Sem Gol no 2°T`,
+        text: `<strong>${team}</strong> <u>não</u> marcou no 2° Tempo em <strong>${nNaoST} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nNaoST/n*100), label: `das partidas ${local}`, sort: nNaoST/n
+      });
+
+      // Marca 2+ gols no jogo
+      const nOver1 = jogos.filter(d => getPT(d)+getST(d) >= 2).length;
+      if (nOver1 / n >= THRESH) insights.push({
+        emoji: '⚽⚽', tag: 'bate', tagLabel: `⚽⚽ 2+ Gols no Jogo`,
+        text: `<strong>${team}</strong> marcou 2 ou mais gols em <strong>${nOver1} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nOver1/n*100), label: `das partidas ${local}`, sort: nOver1/n
+      });
+
+      // Não marca nenhum gol (jogo todo)
+      const nZero = jogos.filter(d => getPT(d)+getST(d) === 0).length;
+      if (nZero / n >= THRESH) insights.push({
+        emoji: '🚫⚽', tag: 'sofre', tagLabel: `🚫 Sem Marcar`,
+        text: `<strong>${team}</strong> <u>não</u> marcou nenhum gol em <strong>${nZero} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nZero/n*100), label: `das partidas ${local}`, sort: nZero/n
+      });
+    };
+
+    // Casa: getPT = Gols_C_PT, getST = Gols_C_ST
+    analyze(emCasa,   d => d.Gols_C_PT, d => d.Gols_C_ST, 'em casa');
+    // Fora: getPT = Gols_V_PT, getST = Gols_V_ST
+    analyze(foraCasa, d => d.Gols_V_PT, d => d.Gols_V_ST, 'fora de casa');
+  });
+
+  insights.sort((a,b) => b.sort - a.sort);
+  renderInsightList('gols-insights-list', insights, '--accent');
+  insightsState['gols'] = false;
+  const body = document.getElementById('gols-insights-body');
+  if (body) body.style.display = 'none';
+  const tog = document.getElementById('gols-insights-toggle');
+  if (tog) { const cnt = insights.length; tog.textContent = `▼ Expandir (${cnt} dica${cnt!==1?'s':''})`; }
+}
+
+// ===== INSIGHTS ESCANTEIOS =====
+let cantOuroActive = false;
+
+function toggleCantOuro() {
+  cantOuroActive = !cantOuroActive;
+  const btn = document.getElementById('cant-ouro-btn');
+  btn.classList.toggle('cant-ouro-active', cantOuroActive);
+  btn.textContent = cantOuroActive ? '⭐ Dica de Ouro (ativo)' : '⭐ Dica de Ouro';
+
+  // Open panel if not already open
+  if (cantOuroActive && !insightsState['cant']) {
+    toggleInsights('cant');
+  }
+
+  // Show/hide cards
+  document.querySelectorAll('#cant-insights-list .insight-card').forEach(card => {
+    if (cantOuroActive) {
+      card.classList.toggle('hidden-by-ouro', !card.dataset.ouro);
+    } else {
+      card.classList.remove('hidden-by-ouro');
+    }
+  });
+}
+
+function generateCantInsights() {
+  const THRESH = 0.75;
+  const MIN    = 2;
+  const insights = [];
+  const teams  = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  teams.forEach(team => {
+    const emCasa   = data.filter(d => d.casa === team);
+    const foraCasa = data.filter(d => d.vis  === team);
+
+    // Helper: analisa escanteios de um lado por período
+    const analyze = (jogos, getPT, getST, local) => {
+      if (jogos.length < MIN) return;
+      const n = jogos.length;
+      const totalPT = jogos.reduce((s,d) => s + getPT(d), 0);
+      const totalST = jogos.reduce((s,d) => s + getST(d), 0);
+      const mediaJogo = (totalPT + totalST) / n;
+
+      // --- PADRÃO GERAL: média por jogo ---
+      if (mediaJogo >= 7) insights.push({
+        emoji: '🚩🔥', tag: 'bate', tagLabel: '🚩 Muitos Escanteios',
+        text: `<strong>${team}</strong> bate em média <strong>${mediaJogo.toFixed(1)} escanteios por jogo</strong> (PT+ST) ${local}`,
+        pct: Math.round(mediaJogo * 10), label: `média de ${mediaJogo.toFixed(1)}/jogo ${local}`,
+        sort: mediaJogo, ouro: false,
+        rawPct: Math.round(mediaJogo * 10)
+      });
+      if (mediaJogo <= 3 && mediaJogo > 0) insights.push({
+        emoji: '🚩💤', tag: 'nao-bate', tagLabel: '🚩 Poucos Escanteios',
+        text: `<strong>${team}</strong> bate em média apenas <strong>${mediaJogo.toFixed(1)} escanteios por jogo</strong> (PT+ST) ${local}`,
+        pct: Math.round((1 - mediaJogo/10)*100), label: `média de ${mediaJogo.toFixed(1)}/jogo ${local}`,
+        sort: 1 - mediaJogo/10, ouro: false,
+        rawPct: null
+      });
+
+      // --- 1° TEMPO ---
+      const mediaPT = totalPT / n;
+      // Dica Ouro: ≤1 escanteio PT (baixo)
+      const nBaixoPT = jogos.filter(d => getPT(d) <= 1).length;
+      if (nBaixoPT / n >= THRESH) insights.push({
+        emoji: '⭐', tag: 'ouro', tagLabel: '⭐ DICA DE OURO',
+        text: `<strong>${team}</strong> bateu <strong>1 ou menos escanteios no 1° Tempo</strong> em <strong>${nBaixoPT} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nBaixoPT/n*100), label: `das partidas ${local}`,
+        sort: nBaixoPT/n + 1, ouro: true, rawPct: Math.round(nBaixoPT/n*100)
+      });
+      // Dica Ouro: ≥4 escanteios PT (alto)
+      const nAltoPT = jogos.filter(d => getPT(d) >= 4).length;
+      if (nAltoPT / n >= THRESH) insights.push({
+        emoji: '⭐', tag: 'ouro', tagLabel: '⭐ DICA DE OURO',
+        text: `<strong>${team}</strong> bateu <strong>4 ou mais escanteios no 1° Tempo</strong> em <strong>${nAltoPT} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nAltoPT/n*100), label: `das partidas ${local}`,
+        sort: nAltoPT/n + 1, ouro: true, rawPct: Math.round(nAltoPT/n*100)
+      });
+      // Padrão: ≥3 escanteios PT
+      const nMaisPT = jogos.filter(d => getPT(d) >= 3).length;
+      if (nMaisPT / n >= THRESH && nAltoPT / n < THRESH) insights.push({
+        emoji: '🚩📈', tag: 'bate', tagLabel: '🚩 3+ no 1° Tempo',
+        text: `<strong>${team}</strong> bateu <strong>3+ escanteios no 1° Tempo</strong> em <strong>${nMaisPT} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMaisPT/n*100), label: `das partidas ${local}`,
+        sort: nMaisPT/n, ouro: false, rawPct: Math.round(nMaisPT/n*100)
+      });
+
+      // --- 2° TEMPO ---
+      // Dica Ouro: ≤1 escanteio ST
+      const nBaixoST = jogos.filter(d => getST(d) <= 1).length;
+      if (nBaixoST / n >= THRESH) insights.push({
+        emoji: '⭐', tag: 'ouro', tagLabel: '⭐ DICA DE OURO',
+        text: `<strong>${team}</strong> bateu <strong>1 ou menos escanteios no 2° Tempo</strong> em <strong>${nBaixoST} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nBaixoST/n*100), label: `das partidas ${local}`,
+        sort: nBaixoST/n + 1, ouro: true, rawPct: Math.round(nBaixoST/n*100)
+      });
+      // Dica Ouro: ≥4 escanteios ST
+      const nAltoST = jogos.filter(d => getST(d) >= 4).length;
+      if (nAltoST / n >= THRESH) insights.push({
+        emoji: '⭐', tag: 'ouro', tagLabel: '⭐ DICA DE OURO',
+        text: `<strong>${team}</strong> bateu <strong>4 ou mais escanteios no 2° Tempo</strong> em <strong>${nAltoST} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nAltoST/n*100), label: `das partidas ${local}`,
+        sort: nAltoST/n + 1, ouro: true, rawPct: Math.round(nAltoST/n*100)
+      });
+      // Padrão: ≥3 escanteios ST
+      const nMaisST = jogos.filter(d => getST(d) >= 3).length;
+      if (nMaisST / n >= THRESH && nAltoST / n < THRESH) insights.push({
+        emoji: '🚩📈', tag: 'bate', tagLabel: '🚩 3+ no 2° Tempo',
+        text: `<strong>${team}</strong> bateu <strong>3+ escanteios no 2° Tempo</strong> em <strong>${nMaisST} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMaisST/n*100), label: `das partidas ${local}`,
+        sort: nMaisST/n, ouro: false, rawPct: Math.round(nMaisST/n*100)
+      });
+    };
+
+    // Jogando em casa: casa bate Canto_C_PT / Canto_C_ST
+    analyze(emCasa,   d=>d.Canto_C_PT, d=>d.Canto_C_ST, 'em casa');
+    // Jogando fora: visitante bate Canto_V_PT / Canto_V_ST
+    analyze(foraCasa, d=>d.Canto_V_PT, d=>d.Canto_V_ST, 'fora de casa');
+  });
+
+  // Ouro primeiro, depois por % decrescente
+  insights.sort((a,b) => {
+    if (a.ouro && !b.ouro) return -1;
+    if (!a.ouro && b.ouro) return 1;
+    return b.sort - a.sort;
+  });
+
+  // Render
+  const list = document.getElementById('cant-insights-list');
+  const toggle = document.getElementById('cant-insights-toggle');
+  if (!insights.length) {
+    list.innerHTML = `<div class="insights-empty">Nenhum padrão com ≥75% encontrado nos dados filtrados.</div>`;
+    if (toggle) toggle.textContent = '▼ Expandir (0 dicas)';
+    return;
+  }
+
+  const ouroCount = insights.filter(i => i.ouro).length;
+  list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;">` +
+    insights.map((ins, i) => `
+      <div class="insight-card${ins.ouro?' is-ouro':''}" data-ouro="${ins.ouro?'1':''}" style="animation-delay:${i*0.03}s">
+        <div class="insight-emoji">${ins.emoji}</div>
+        <div class="insight-content">
+          <span class="insight-tag ${ins.tag}">${ins.tagLabel}</span>
+          <div class="insight-text">${ins.text}</div>
+          <div class="insight-pct" style="color:${ins.ouro?'var(--accent3)':'var(--accent4)'}">${ins.pct}%<span>${ins.label}</span></div>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+
+  if (toggle) toggle.textContent = `▼ Expandir (${insights.length} dicas · ⭐ ${ouroCount} de ouro)`;
+  const ouroBtn = document.getElementById('cant-ouro-btn');
+  if (ouroBtn) ouroBtn.textContent = `⭐ Dica de Ouro (${ouroCount})`;
+
+  insightsState['cant'] = false;
+  const body = document.getElementById('cant-insights-body');
+  if (body) body.style.display = 'none';
+  cantOuroActive = false;
+  const btn = document.getElementById('cant-ouro-btn');
+  if (btn) btn.classList.remove('cant-ouro-active');
+}
+
+function buildEscanteios() {
+  makeRankingTable('cant-ranking',teamStats(d=>[d.cant_casa,d.cant_vis]).slice(0,rankingSize()),'--accent4','cant-detail','escanteios');
+  makeGrid('cant-grid',d=>makeMatchCard(d,d.cant_casa,d.cant_vis,[
+    {l:'Casa PT',v:d.Canto_C_PT},{l:'Casa ST',v:d.Canto_C_ST},
+    {l:'Vis PT',v:d.Canto_V_PT},{l:'Vis ST',v:d.Canto_V_ST},
+  ]));
+  generateCantInsights();
+}
+
+// ===== FINALIZAÇÕES state =====
+let finFilter = 'on-pt';
+let finTeam   = null; // team selected in ranking
+
+function setFinFilter(f) {
+  finFilter = f;
+  ['on-pt','off-pt','on-st','off-st'].forEach(k => {
+    document.getElementById('fbtn-'+k).classList.toggle('active', k===f);
+  });
+  renderFinGrid();
+}
+
+function renderFinGrid() {
+  const grid = document.getElementById('fin-grid');
+  const label = document.getElementById('fin-grid-label');
+
+  // Determine which games to show
+  const games = finTeam
+    ? data.filter(d => d.casa === finTeam || d.vis === finTeam)
+    : data;
+
+  // Label update
+  const filterLabels = {
+    'on-pt':  '🎯 Chutes no Alvo — 1° Tempo',
+    'off-pt': '💨 Chutes para Fora — 1° Tempo',
+    'on-st':  '🎯 Chutes no Alvo — 2° Tempo',
+    'off-st': '💨 Chutes para Fora — 2° Tempo',
+  };
+  label.textContent = finTeam
+    ? `${finTeam.toUpperCase()} — ${filterLabels[finFilter]}`
+    : `TODOS OS JOGOS — ${filterLabels[finFilter]}`;
+
+  // Accessor per filter
+  const getCasa = (d) => {
+    if (finFilter==='on-pt')  return d.On_C_PT;
+    if (finFilter==='off-pt') return d.Off_C_PT;
+    if (finFilter==='on-st')  return d.On_C_ST;
+    return d.Off_C_ST;
+  };
+  const getVis = (d) => {
+    if (finFilter==='on-pt')  return d.On_V_PT;
+    if (finFilter==='off-pt') return d.Off_V_PT;
+    if (finFilter==='on-st')  return d.On_V_ST;
+    return d.Off_V_ST;
+  };
+
+  const isOn  = finFilter.startsWith('on');
+  const isPT  = finFilter.endsWith('pt');
+  const periodLabel = (isOn ? '🎯 No Alvo' : '💨 Para Fora') + ' · ' + (isPT ? '1° Tempo' : '2° Tempo');
+
+  // Sort by highest value descending
+  const sorted = [...games].sort((a,b) => (getCasa(b)+getVis(b)) - (getCasa(a)+getVis(a)));
+
+  grid.innerHTML = sorted.map((d, i) => {
+    const vCasa = getCasa(d);
+    const vVis  = getVis(d);
+
+    const isCasaFocus = finTeam && d.casa === finTeam;
+    const isVisFocus  = finTeam && d.vis  === finTeam;
+
+    const casaValClass = isOn
+      ? (isCasaFocus ? 'home-on' : 'on')
+      : 'off';
+    const visValClass  = isOn
+      ? (isVisFocus ? 'away-on' : 'on')
+      : 'off';
+
+    return `<div class="fin-card${(isCasaFocus||isVisFocus)?' team-highlighted':''}" style="animation-delay:${i*0.025}s">
+      <div class="fin-header">
+        <span class="fin-match">${d.Jogo}</span>
+        <span class="fin-period-badge${isOn?'':' fora'}">${periodLabel}</span>
+        <span class="fin-score">${d.Placar_FT}</span>
+      </div>
+      <div class="fin-teams">
+        <div class="fin-team${isCasaFocus?' active-team':''}">
+          <div class="fin-team-name">${isCasaFocus?'⭐ ':''} 🏠 ${d.casa}</div>
+          <div class="fin-team-val ${casaValClass}">${vCasa}</div>
+          <div class="fin-team-sub">${isOn?'no alvo':'para fora'}</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;color:var(--muted);font-size:11px;font-weight:700;">x</div>
+        <div class="fin-team${isVisFocus?' active-team':''}">
+          <div class="fin-team-name">${isVisFocus?'⭐ ':''} ✈️ ${d.vis}</div>
+          <div class="fin-team-val ${visValClass}">${vVis}</div>
+          <div class="fin-team-sub">${isOn?'no alvo':'para fora'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildFinalizacoes() {
+  // KPIs
+  const totOnPT  = data.reduce((s,d)=>s+d.On_C_PT+d.On_V_PT,0);
+  const totOnST  = data.reduce((s,d)=>s+d.On_C_ST+d.On_V_ST,0);
+  const totOffPT = data.reduce((s,d)=>s+d.Off_C_PT+d.Off_V_PT,0);
+  const totOffST = data.reduce((s,d)=>s+d.Off_C_ST+d.Off_V_ST,0);
+
+  document.getElementById('fin-kpis').innerHTML = [
+    {l:'Chutes no Alvo — PT',   v:totOnPT,  s:`Média: ${(totOnPT/data.length).toFixed(1)}/jogo`,  c:'c-yellow'},
+    {l:'Chutes no Alvo — ST',   v:totOnST,  s:`Média: ${(totOnST/data.length).toFixed(1)}/jogo`,  c:'c-yellow'},
+    {l:'Chutes para Fora — PT', v:totOffPT, s:`Média: ${(totOffPT/data.length).toFixed(1)}/jogo`, c:'c-blue'},
+    {l:'Chutes para Fora — ST', v:totOffST, s:`Média: ${(totOffST/data.length).toFixed(1)}/jogo`, c:'c-blue'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div><div class="ov-val ${c.c}">${c.v}</div><div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  // Ranking — override selectTeam for fin to also update finTeam + re-render grid
+  const ranking = teamStats(d=>[d.on_casa,d.on_vis]).slice(0,rankingSize());
+  makeRankingTable('fin-ranking', ranking, '--accent3', 'fin-detail', 'finalizacoes');
+
+  // Patch ranking rows to also update finTeam on click
+  const origSelectTeam = window.selectTeam;
+  // We'll handle this via the global selectTeam with a hook (see below)
+
+  generateFinInsights();
+
+  finTeam   = null;
+  finFilter = 'on-pt';
+  ['on-pt','off-pt','on-st','off-st'].forEach(k => {
+    document.getElementById('fbtn-'+k).classList.toggle('active', k==='on-pt');
+  });
+  renderFinGrid();
+}
+
+// ===== CARTÕES state =====
+let cardFilter = 'total';
+
+function setCardFilter(f) {
+  cardFilter = f;
+  ['total','pt','st'].forEach(k => {
+    document.getElementById('cbtn-'+k).classList.toggle('active', k===f);
+  });
+  renderCardGrid();
+}
+
+function renderCardGrid() {
+  const grid = document.getElementById('card-grid');
+
+  const cards = data.map((d, i) => {
+    let amCasa, amVis, vmCasa, vmVis, periodLabel;
+
+    if (cardFilter === 'pt') {
+      amCasa = d.Amarelo_Casa_PT; amVis = d.Amarelo_Vis_PT;
+      vmCasa = d.Vermelho_Casa_PT; vmVis = d.Vermelho_Vis_PT;
+      periodLabel = '1° Tempo';
+    } else if (cardFilter === 'st') {
+      amCasa = d.Amarelo_Casa_ST; amVis = d.Amarelo_Vis_ST;
+      vmCasa = d.Vermelho_Casa_ST; vmVis = d.Vermelho_Vis_ST;
+      periodLabel = '2° Tempo';
+    } else {
+      amCasa = d.am_casa; amVis = d.am_vis;
+      vmCasa = d.vm_casa; vmVis = d.vm_vis;
+      periodLabel = 'Jogo Todo';
+    }
+
+    const totalAm = amCasa + amVis;
+    const totalVm = vmCasa + vmVis;
+    const hasRed  = totalVm > 0;
+
+    const pill = (n, type) => {
+      const cls = n === 0 ? 'zero' : type;
+      return `<div class="cmc-card-pill ${cls}">
+        <span class="num">${n}</span>
+        <span class="lbl">${type === 'yellow' ? '🟨' : '🟥'}</span>
+      </div>`;
+    };
+
+    return `<div class="card-match-card${hasRed?' has-red':''}" style="animation-delay:${i*0.025}s">
+      <div class="cmc-header">
+        <span class="cmc-match">${d.Jogo}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="cmc-period-badge">${periodLabel}</span>
+          <span class="cmc-score">${d.Placar_FT}</span>
+        </div>
+      </div>
+      <div class="cmc-teams">
+        <div class="cmc-team">
+          <div class="cmc-team-name">🏠 ${d.casa}</div>
+          <div class="cmc-cards-row">
+            ${pill(amCasa,'yellow')}
+            ${pill(vmCasa,'red')}
+          </div>
+        </div>
+        <div class="cmc-sep">x</div>
+        <div class="cmc-team">
+          <div class="cmc-team-name">✈️ ${d.vis}</div>
+          <div class="cmc-cards-row">
+            ${pill(amVis,'yellow')}
+            ${pill(vmVis,'red')}
+          </div>
+        </div>
+      </div>
+      <div class="cmc-total-row">
+        <div class="cmc-total-pill">
+          <span class="cmc-total-label">🟨 Total Amarelos</span>
+          <span class="cmc-total-val yellow">${totalAm}</span>
+        </div>
+        <div class="cmc-total-pill">
+          <span class="cmc-total-label">🟥 Total Vermelhos</span>
+          <span class="cmc-total-val red">${totalVm}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  grid.innerHTML = cards.join('');
+}
+
+function buildCartoes() {
+  // KPIs
+  const totAmPT  = data.reduce((s,d)=>s+d.Amarelo_Casa_PT+d.Amarelo_Vis_PT,0);
+  const totAmST  = data.reduce((s,d)=>s+d.Amarelo_Casa_ST+d.Amarelo_Vis_ST,0);
+  const totVmPT  = data.reduce((s,d)=>s+d.Vermelho_Casa_PT+d.Vermelho_Vis_PT,0);
+  const totVmST  = data.reduce((s,d)=>s+d.Vermelho_Casa_ST+d.Vermelho_Vis_ST,0);
+  const totAm    = totAmPT + totAmST;
+  const totVm    = totVmPT + totVmST;
+  const jogosComVm = data.filter(d=>d.vm_casa+d.vm_vis>0).length;
+
+  document.getElementById('card-kpis').innerHTML = [
+    {l:'Amarelos Totais',      v:totAm,   s:`PT: ${totAmPT} · ST: ${totAmST}`,           c:'c-yellow'},
+    {l:'Vermelhos Totais',     v:totVm,   s:`PT: ${totVmPT} · ST: ${totVmST}`,           c:'c-red'},
+    {l:'Amarelos por Jogo',    v:(totAm/data.length).toFixed(1), s:`Média das ${data.length} partidas`, c:'c-yellow'},
+    {l:'Jogos com Vermelho',   v:jogosComVm, s:`${Math.round(jogosComVm/data.length*100)}% das partidas`, c:'c-red'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div><div class="ov-val ${c.c}">${c.v}</div><div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  makeRankingTable('card-ranking',teamStats(d=>[d.am_casa,d.am_vis]).slice(0,rankingSize()),'--accent2','card-detail','cartoes');
+
+  generateCardInsights();
+
+  cardFilter = 'total';
+  ['total','pt','st'].forEach(k => {
+    document.getElementById('cbtn-'+k).classList.toggle('active', k==='total');
+  });
+  renderCardGrid();
+}
+
+// ===== C10 state =====
+let c10Filter = 'todos';
+
+function setC10Filter(f) {
+  c10Filter = f;
+  ['todos','2mais','menos2','zero'].forEach(k => {
+    document.getElementById('btn-'+k).classList.toggle('active', k===f);
+  });
+  renderC10Grid();
+}
+
+function renderC10Grid() {
+  const grid = document.getElementById('c10-grid');
+  const filtered = data.filter(d => {
+    const total = d.C10_Casa + d.C10_Vis;
+    if (c10Filter === '2mais')  return total >= 2;
+    if (c10Filter === 'menos2') return total < 2;
+    if (c10Filter === 'zero')   return total === 0;
+    return true;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px;font-size:14px;">Nenhum jogo encontrado para este filtro.</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((d, i) => {
+    const total = d.C10_Casa + d.C10_Vis;
+    const has2  = total >= 2;
+    const isZero= total === 0;
+    const cardClass = has2 ? 'has2' : isZero ? 'zero' : '';
+
+    const hClass = d.C10_Casa === 0 ? 'zero-v' : 'home';
+    const aClass = d.C10_Vis  === 0 ? 'zero-v' : 'away';
+    const tClass = total === 0 ? 'zero-t' : '';
+
+    return `<div class="c10-card ${cardClass}" style="animation-delay:${i*0.025}s">
+      <div class="c10-card-header">
+        <span class="c10-card-match">${d.Jogo}</span>
+        <span class="c10-card-score">${d.Placar_FT}</span>
+      </div>
+      <div class="c10-teams">
+        <div class="c10-team">
+          <div class="c10-team-name">${d.casa}</div>
+          <div class="c10-team-val ${hClass}">${d.C10_Casa}</div>
+          <div class="c10-team-label">🏠 casa</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:0 4px;color:var(--muted);font-size:11px;font-weight:700;">x</div>
+        <div class="c10-team">
+          <div class="c10-team-name">${d.vis}</div>
+          <div class="c10-team-val ${aClass}">${d.C10_Vis}</div>
+          <div class="c10-team-label">✈️ fora</div>
+        </div>
+      </div>
+      <div class="c10-total-badge">
+        <span style="font-size:11px">Total cantos 10min:</span>
+        <span class="c10-total-num ${tClass}">${total}</span>
+        ${has2 ? `<span style="color:var(--accent4);font-size:11px;font-weight:700">✔ 2+</span>` : ''}
+        ${isZero ? `<span style="color:var(--muted);font-size:11px">— nenhum</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== INSIGHTS ENGINE =====
+const THRESHOLD = 0.75; // 75%
+const MIN_GAMES  = 2;   // mínimo de jogos para considerar padrão
+
+function generateInsights() {
+  const insights = [];
+
+  // Coletar todos os times únicos do dataset atual
+  const teams = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  teams.forEach(team => {
+    const jogosEmCasa = data.filter(d => d.casa === team);
+    const jogosForaCasa = data.filter(d => d.vis  === team);
+
+    // --- JOGANDO EM CASA ---
+    if (jogosEmCasa.length >= MIN_GAMES) {
+      const nBateu    = jogosEmCasa.filter(d => d.C10_Casa >= 1).length;
+      const nNaoBateu = jogosEmCasa.filter(d => d.C10_Casa === 0).length;
+      const nSofreu   = jogosEmCasa.filter(d => d.C10_Vis  >= 1).length;
+      const nNaoSofreu= jogosEmCasa.filter(d => d.C10_Vis  === 0).length;
+      const total     = jogosEmCasa.length;
+
+      const pctBateu     = nBateu    / total;
+      const pctNaoBateu  = nNaoBateu / total;
+      const pctSofreu    = nSofreu   / total;
+      const pctNaoSofreu = nNaoSofreu/ total;
+
+      if (pctBateu >= THRESHOLD) {
+        insights.push({
+          tag: 'bate', emoji: '🚩',
+          text: `<strong>${team}</strong> bateu escanteio nos 10 min em <strong>${nBateu} de ${total}</strong> jogos em casa`,
+          pct: Math.round(pctBateu * 100),
+          label: 'das partidas em casa',
+          sort: pctBateu
+        });
+      }
+      if (pctNaoBateu >= THRESHOLD) {
+        insights.push({
+          tag: 'nao-bate', emoji: '⬛',
+          text: `<strong>${team}</strong> <u>não</u> bateu nenhum escanteio nos 10 min em <strong>${nNaoBateu} de ${total}</strong> jogos em casa`,
+          pct: Math.round(pctNaoBateu * 100),
+          label: 'das partidas em casa',
+          sort: pctNaoBateu
+        });
+      }
+      if (pctSofreu >= THRESHOLD) {
+        insights.push({
+          tag: 'sofre', emoji: '😬',
+          text: `<strong>${team}</strong> sofreu escanteio adversário nos 10 min em <strong>${nSofreu} de ${total}</strong> jogos em casa`,
+          pct: Math.round(pctSofreu * 100),
+          label: 'das partidas em casa',
+          sort: pctSofreu
+        });
+      }
+      if (pctNaoSofreu >= THRESHOLD) {
+        insights.push({
+          tag: 'nao-sofre', emoji: '🛡️',
+          text: `<strong>${team}</strong> <u>não</u> sofreu escanteio nos 10 min em <strong>${nNaoSofreu} de ${total}</strong> jogos em casa`,
+          pct: Math.round(pctNaoSofreu * 100),
+          label: 'das partidas em casa',
+          sort: pctNaoSofreu
+        });
+      }
+    }
+
+    // --- JOGANDO FORA ---
+    if (jogosForaCasa.length >= MIN_GAMES) {
+      const nBateu    = jogosForaCasa.filter(d => d.C10_Vis  >= 1).length;
+      const nNaoBateu = jogosForaCasa.filter(d => d.C10_Vis  === 0).length;
+      const nSofreu   = jogosForaCasa.filter(d => d.C10_Casa >= 1).length;
+      const nNaoSofreu= jogosForaCasa.filter(d => d.C10_Casa === 0).length;
+      const total     = jogosForaCasa.length;
+
+      const pctBateu     = nBateu    / total;
+      const pctNaoBateu  = nNaoBateu / total;
+      const pctSofreu    = nSofreu   / total;
+      const pctNaoSofreu = nNaoSofreu/ total;
+
+      if (pctBateu >= THRESHOLD) {
+        insights.push({
+          tag: 'bate', emoji: '✈️🚩',
+          text: `<strong>${team}</strong> bateu escanteio nos 10 min em <strong>${nBateu} de ${total}</strong> jogos fora de casa`,
+          pct: Math.round(pctBateu * 100),
+          label: 'das partidas fora',
+          sort: pctBateu
+        });
+      }
+      if (pctNaoBateu >= THRESHOLD) {
+        insights.push({
+          tag: 'nao-bate', emoji: '✈️⬛',
+          text: `<strong>${team}</strong> <u>não</u> bateu nenhum escanteio nos 10 min em <strong>${nNaoBateu} de ${total}</strong> jogos fora de casa`,
+          pct: Math.round(pctNaoBateu * 100),
+          label: 'das partidas fora',
+          sort: pctNaoBateu
+        });
+      }
+      if (pctSofreu >= THRESHOLD) {
+        insights.push({
+          tag: 'sofre', emoji: '✈️😬',
+          text: `<strong>${team}</strong> sofreu escanteio adversário nos 10 min em <strong>${nSofreu} de ${total}</strong> jogos fora de casa`,
+          pct: Math.round(pctSofreu * 100),
+          label: 'das partidas fora',
+          sort: pctSofreu
+        });
+      }
+      if (pctNaoSofreu >= THRESHOLD) {
+        insights.push({
+          tag: 'nao-sofre', emoji: '✈️🛡️',
+          text: `<strong>${team}</strong> <u>não</u> sofreu escanteio nos 10 min em <strong>${nNaoSofreu} de ${total}</strong> jogos fora de casa`,
+          pct: Math.round(pctNaoSofreu * 100),
+          label: 'das partidas fora',
+          sort: pctNaoSofreu
+        });
+      }
+    }
+  });
+
+  // Ordenar por % decrescente
+  insights.sort((a, b) => b.sort - a.sort);
+
+  renderInsightList('c10-insights-list', insights, '--accent4');
+  insightsState['c10'] = false;
+  document.getElementById('c10-insights-body').style.display = 'none';
+}
+
+let insightsOpen = false;
+const insightsState = {};
+
+function toggleInsights(id) {
+  insightsState[id] = !insightsState[id];
+  const body   = document.getElementById(id+'-insights-body');
+  const toggle = document.getElementById(id+'-insights-toggle');
+  if (!body || !toggle) return;
+  body.style.display = insightsState[id] ? 'block' : 'none';
+  const count = toggle.textContent.match(/\d+ dica/)?.[0] || '';
+  toggle.textContent = insightsState[id]
+    ? `▲ Recolher (${count})`
+    : `▼ Expandir (${count})`;
+}
+
+// Generic insight card renderer
+function renderInsightList(listId, insights, accentVar) {
+  const list = document.getElementById(listId);
+  const toggleId = listId.replace('-list','-toggle');
+  const toggle   = document.getElementById(toggleId);
+  const accent   = `var(${accentVar})`;
+
+  if (!insights.length) {
+    list.innerHTML = `<div class="insights-empty">Nenhum padrão com ≥75% encontrado nos dados filtrados.</div>`;
+    if (toggle) toggle.textContent = '▼ Expandir (0 dicas)';
+    return;
+  }
+
+  list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;">` +
+    insights.map((ins, i) => `
+      <div class="insight-card" style="animation-delay:${i*0.04}s;border-color:rgba(0,0,0,0)">
+        <div class="insight-emoji">${ins.emoji}</div>
+        <div class="insight-content">
+          <span class="insight-tag ${ins.tag}">${ins.tagLabel}</span>
+          <div class="insight-text">${ins.text}</div>
+          <div class="insight-pct" style="color:${accent}">${ins.pct}%<span>${ins.label}</span></div>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+
+  if (toggle) toggle.textContent = `▼ Expandir (${insights.length} dicas)`;
+}
+
+// ===== INSIGHTS CARTÕES =====
+function generateCardInsights() {
+  const THRESH = 0.75;
+  const MIN    = 2;
+  const insights = [];
+  const teams  = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  teams.forEach(team => {
+    // Função auxiliar: analisa cartões em um período para um conjunto de jogos
+    const analyze = (jogos, getCarta, periodo, local) => {
+      if (jogos.length < MIN) return;
+      const n = jogos.length;
+
+      // Sofre cartão (≥1 amarelo no período)
+      const nSofre    = jogos.filter(d => getCarta(d) >= 1).length;
+      // Sofre muito (≥2 amarelos no período)
+      const nMuito    = jogos.filter(d => getCarta(d) >= 2).length;
+      // Não sofre nenhum
+      const nNaoSofre = jogos.filter(d => getCarta(d) === 0).length;
+
+      if (nSofre / n >= THRESH) insights.push({
+        emoji: '🟨😤', tag: 'sofre', tagLabel: `🟨 Sofre ${periodo}`,
+        text: `<strong>${team}</strong> levou amarelo no ${periodo} em <strong>${nSofre} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nSofre/n*100), label: `das partidas ${local}`, sort: nSofre/n
+      });
+      if (nMuito / n >= THRESH) insights.push({
+        emoji: '🟨🟨', tag: 'sofre', tagLabel: `🟨🟨 2+ Cartões ${periodo}`,
+        text: `<strong>${team}</strong> levou 2+ amarelos no ${periodo} em <strong>${nMuito} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMuito/n*100), label: `das partidas ${local}`, sort: nMuito/n
+      });
+      if (nNaoSofre / n >= THRESH) insights.push({
+        emoji: '🛡️', tag: 'nao-sofre', tagLabel: `🛡️ Disciplinado ${periodo}`,
+        text: `<strong>${team}</strong> <u>não</u> levou amarelo no ${periodo} em <strong>${nNaoSofre} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nNaoSofre/n*100), label: `das partidas ${local}`, sort: nNaoSofre/n
+      });
+    };
+
+    const emCasa  = data.filter(d => d.casa === team);
+    const foraCasa = data.filter(d => d.vis  === team);
+
+    // 1° Tempo em casa: cartões = Amarelo_Casa_PT
+    analyze(emCasa,  d => d.Amarelo_Casa_PT, '1° Tempo', 'em casa');
+    // 2° Tempo em casa
+    analyze(emCasa,  d => d.Amarelo_Casa_ST, '2° Tempo', 'em casa');
+    // 1° Tempo fora
+    analyze(foraCasa, d => d.Amarelo_Vis_PT, '1° Tempo', 'fora de casa');
+    // 2° Tempo fora
+    analyze(foraCasa, d => d.Amarelo_Vis_ST, '2° Tempo', 'fora de casa');
+  });
+
+  insights.sort((a,b) => b.sort - a.sort);
+  renderInsightList('card-insights-list', insights, '--accent2');
+  insightsState['card'] = false;
+  const body = document.getElementById('card-insights-body');
+  if (body) body.style.display = 'none';
+  const tog = document.getElementById('card-insights-toggle');
+  if (tog) { const cnt = insights.length; tog.textContent = `▼ Expandir (${cnt} dica${cnt!==1?'s':''})`; }
+}
+
+// ===== INSIGHTS FINALIZAÇÕES =====
+// Alvo: muito ≥5, pouco ≤2 | Fora: muito ≥6, pouco ≤3
+function generateFinInsights() {
+  const THRESH = 0.75;
+  const MIN    = 2;
+  const insights = [];
+  const teams  = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  teams.forEach(team => {
+    const analyze = (jogos, getOn, getOff, periodo, local) => {
+      if (jogos.length < MIN) return;
+      const n = jogos.length;
+
+      // No alvo
+      const nMuitoOn  = jogos.filter(d => getOn(d) >= 5).length;
+      const nPoucoOn  = jogos.filter(d => getOn(d) <= 2).length;
+      // Para fora
+      const nMuitoOff = jogos.filter(d => getOff(d) >= 6).length;
+      const nPoucoOff = jogos.filter(d => getOff(d) <= 3).length;
+
+      if (nMuitoOn / n >= THRESH) insights.push({
+        emoji: '🎯🔥', tag: 'bate', tagLabel: `🎯 Muito Eficiente ${periodo}`,
+        text: `<strong>${team}</strong> finalizou 5+ vezes no alvo no ${periodo} em <strong>${nMuitoOn} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMuitoOn/n*100), label: `das partidas ${local}`, sort: nMuitoOn/n
+      });
+      if (nPoucoOn / n >= THRESH) insights.push({
+        emoji: '🎯💤', tag: 'nao-bate', tagLabel: `🎯 Pouco no Alvo ${periodo}`,
+        text: `<strong>${team}</strong> finalizou 0-2 vezes no alvo no ${periodo} em <strong>${nPoucoOn} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nPoucoOn/n*100), label: `das partidas ${local}`, sort: nPoucoOn/n
+      });
+      if (nMuitoOff / n >= THRESH) insights.push({
+        emoji: '💨🔥', tag: 'sofre', tagLabel: `💨 Muito para Fora ${periodo}`,
+        text: `<strong>${team}</strong> chutou 6+ vezes para fora no ${periodo} em <strong>${nMuitoOff} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nMuitoOff/n*100), label: `das partidas ${local}`, sort: nMuitoOff/n
+      });
+      if (nPoucoOff / n >= THRESH) insights.push({
+        emoji: '💨✅', tag: 'nao-sofre', tagLabel: `💨 Preciso ${periodo}`,
+        text: `<strong>${team}</strong> chutou 0-3 vezes para fora no ${periodo} em <strong>${nPoucoOff} de ${n}</strong> jogos ${local}`,
+        pct: Math.round(nPoucoOff/n*100), label: `das partidas ${local}`, sort: nPoucoOff/n
+      });
+    };
+
+    const emCasa   = data.filter(d => d.casa === team);
+    const foraCasa = data.filter(d => d.vis  === team);
+
+    analyze(emCasa,   d=>d.On_C_PT, d=>d.Off_C_PT, '1° Tempo', 'em casa');
+    analyze(emCasa,   d=>d.On_C_ST, d=>d.Off_C_ST, '2° Tempo', 'em casa');
+    analyze(foraCasa, d=>d.On_V_PT, d=>d.Off_V_PT, '1° Tempo', 'fora de casa');
+    analyze(foraCasa, d=>d.On_V_ST, d=>d.Off_V_ST, '2° Tempo', 'fora de casa');
+  });
+
+  insights.sort((a,b) => b.sort - a.sort);
+  renderInsightList('fin-insights-list', insights, '--accent3');
+  insightsState['fin'] = false;
+  const body = document.getElementById('fin-insights-body');
+  if (body) body.style.display = 'none';
+  const tog = document.getElementById('fin-insights-toggle');
+  if (tog) { const cnt = insights.length; tog.textContent = `▼ Expandir (${cnt} dica${cnt!==1?'s':''})`; }
+}
+
+function buildC10() {
+  // Ranking: soma C10_Casa quando o time joga em casa + C10_Vis quando joga fora
+  // mas o campo representa os cantos DO time da CASA e DO VISITANTE
+  // C10_Casa = cantos batidos pelo time da casa | C10_Vis = cantos batidos pelo visitante
+  const map = {};
+  data.forEach(d => {
+    map[d.casa] = (map[d.casa]||0) + d.C10_Casa;
+    map[d.vis]  = (map[d.vis] ||0) + d.C10_Vis;
+  });
+  const ranking = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,rankingSize());
+
+  // KPI cards
+  const totalCantos10  = data.reduce((s,d)=>s+d.C10_Casa+d.C10_Vis,0);
+  const jogosCom2mais  = data.filter(d=>d.C10_Casa+d.C10_Vis>=2).length;
+  const jogosZero      = data.filter(d=>d.C10_Casa+d.C10_Vis===0).length;
+  const jogosUnder2    = data.filter(d=>d.C10_Casa+d.C10_Vis<=1).length; // 0 ou 1 canto = under 1.5
+  const mediaJogo      = (totalCantos10/data.length).toFixed(1);
+
+  document.getElementById('c10-kpis').innerHTML = [
+    {l:'Total Cantos 10min',          v:totalCantos10, s:`Em ${data.length} jogos`,                                     c:'c-blue'},
+    {l:'Média por Jogo',              v:mediaJogo,     s:'cantos nos 10 min',                                           c:'c-green'},
+    {l:'Jogos com 2+ Cantos',         v:jogosCom2mais, s:`${Math.round(jogosCom2mais/data.length*100)}% das partidas`,  c:'c-yellow'},
+    {l:'📉 Under 1.5 (0 ou 1 canto)', v:jogosUnder2,   s:`${Math.round(jogosUnder2/data.length*100)}% das partidas`,   c:'c-red'},
+    {l:'Jogos sem nenhum Canto',      v:jogosZero,     s:`${Math.round(jogosZero/data.length*100)}% das partidas`,      c:'c-red'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div><div class="ov-val ${c.c}">${c.v}</div><div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  // Ranking table usando makeRankingTable genérico
+  makeRankingTable('c10-ranking', ranking, '--accent4', 'c10-detail', 'c10');
+
+  // Insights
+  generateInsights();
+  insightsState['c10'] = false;
+  const c10Body = document.getElementById('c10-insights-body');
+  if (c10Body) c10Body.style.display = 'none';
+
+  // Grid com filter
+  c10Filter = 'todos';
+  renderC10Grid();
+}
+
+// ===== SCOUT ENGINE =====
+let scoutThreshold = 70;
+let scoutCurrentTeam = null;
+let scoutTypeFilter = 'all'; // 'all' | 'over' | 'under'
+
+function setScoutTypeFilter(f) {
+  scoutTypeFilter = f;
+  ['all','over','under'].forEach(k => {
+    const btn = document.getElementById('scout-type-'+k);
+    if (btn) { btn.classList.toggle('active', k===f); btn.setAttribute('aria-pressed', k===f); }
+  });
+  if (scoutCurrentTeam) renderScout(scoutCurrentTeam);
+}
+
+function setScoutThreshold(v) {
+  scoutThreshold = v;
+  [70,75,80,90].forEach(t => {
+    const btn = document.getElementById('thr-'+t);
+    if (btn) { btn.classList.toggle('active', t===v); btn.setAttribute('aria-pressed', t===v); }
+  });
+  if (scoutCurrentTeam) renderScout(scoutCurrentTeam);
+}
+
+function getAllTeams() {
+  return [...new Set(allData.flatMap(d => [d.casa, d.vis]))].sort();
+}
+
+function showScoutDropdown() {
+  const q = document.getElementById('scout-search').value.trim().toLowerCase();
+  filterScoutDropdown(q || '');
+}
+
+function filterScoutDropdown(q) {
+  const dd = document.getElementById('scout-dropdown');
+  const teams = getAllTeams().filter(t => !q || t.toLowerCase().includes(q));
+  if (!teams.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = teams.slice(0,20).map(t => {
+    const jogos = allData.filter(d => d.casa===t || d.vis===t).length;
+    return `<div class="scout-dropdown-item" onclick="selectScoutTeam('${t.replace(/'/g,"\\'")}')">
+      <span>⚽</span><span>${t}</span>
+      <span class="scout-dropdown-badge">${jogos} jogo${jogos!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#scout-selector-wrap')) {
+    const dd = document.getElementById('scout-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
+function selectScoutTeam(team) {
+  scoutCurrentTeam = team;
+  document.getElementById('scout-search').value = team;
+  const dd = document.getElementById('scout-dropdown');
+  if (dd) dd.style.display = 'none';
+  renderScout(team);
+}
+
+function confClass(pct) {
+  if (pct >= 90) return 'conf-high';
+  if (pct >= 80) return 'conf-mid';
+  return 'conf-low';
+}
+
+function renderScout(team) {
+  const placeholder = document.getElementById('scout-placeholder');
+  const result = document.getElementById('scout-result');
+  placeholder.style.display = 'none';
+  result.style.display = 'block';
+
+  const jogosEmCasa   = data.filter(d => d.casa === team);
+  const jogosForaCasa = data.filter(d => d.vis  === team);
+  const todosJogos    = data.filter(d => d.casa === team || d.vis === team);
+
+  if (!todosJogos.length) {
+    result.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">Nenhum jogo encontrado para <strong style="color:var(--text)">${team}</strong> nos dados filtrados.</div>`;
+    return;
+  }
+
+  // Stats summary
+  let wins=0, draws=0, losses=0, goalsFor=0, goalsAgainst=0;
+  todosJogos.forEach(d => {
+    const h = d.casa===team;
+    const [gh,ga] = d.Placar_FT.split('-').map(Number);
+    const mf=h?gh:ga, mc=h?ga:gh;
+    goalsFor+=mf; goalsAgainst+=mc;
+    if(mf>mc)wins++; else if(mf===mc)draws++; else losses++;
+  });
+
+  // Build all scout entries
+  const T = scoutThreshold / 100;
+  const MIN = 2;
+
+  // ---- helper ----
+  function makeEntries(jogos, local, localClass) {
+    if (jogos.length < MIN) return [];
+    const n = jogos.length;
+    const entries = [];
+
+    // type: 'over' | 'under' | 'neutral'
+    const add = (emoji, cat, text, num, den, type='neutral') => {
+      const pct = Math.round(num/den*100);
+      if (pct/100 >= T) entries.push({ emoji, cat, text, pct, den, num, local, localClass, type });
+    };
+
+    const isHome = localClass === 'casa';
+
+    // ── GOLS ──
+    const gPT  = d => isHome ? d.Gols_C_PT  : d.Gols_V_PT;
+    const gST  = d => isHome ? d.Gols_C_ST  : d.Gols_V_ST;
+    const gTot = d => gPT(d)+gST(d);
+    const sPT  = d => isHome ? d.Gols_V_PT  : d.Gols_C_PT;
+    const sST  = d => isHome ? d.Gols_V_ST  : d.Gols_C_ST;
+    const sTot = d => sPT(d)+sST(d);
+
+    add('⚽','Gols',`Marcou no 1° Tempo`,            jogos.filter(d=>gPT(d)>=1).length, n, 'over');
+    add('⚽','Gols',`Marcou no 2° Tempo`,            jogos.filter(d=>gST(d)>=1).length, n, 'over');
+    add('⚽','Gols',`Marcou em ambos os tempos`,     jogos.filter(d=>gPT(d)>=1&&gST(d)>=1).length, n, 'over');
+    add('⚽','Gols',`Marcou 2+ gols no jogo`,        jogos.filter(d=>gTot(d)>=2).length, n, 'over');
+    add('⚽','Gols',`Marcou 3+ gols no jogo`,        jogos.filter(d=>gTot(d)>=3).length, n, 'over');
+    add('🚫','Gols',`Não marcou (jogo todo)`,        jogos.filter(d=>gTot(d)===0).length, n, 'under');
+    add('🚫','Gols',`Não marcou no 1° Tempo`,        jogos.filter(d=>gPT(d)===0).length, n, 'under');
+    add('🚫','Gols',`Não marcou no 2° Tempo`,        jogos.filter(d=>gST(d)===0).length, n, 'under');
+    add('🥅','Gols',`Sofreu gol no 1° Tempo`,        jogos.filter(d=>sPT(d)>=1).length, n, 'over');
+    add('🥅','Gols',`Sofreu gol no 2° Tempo`,        jogos.filter(d=>sST(d)>=1).length, n, 'over');
+    add('🛡️','Gols',`Não sofreu gol (Clean Sheet)`, jogos.filter(d=>sTot(d)===0).length, n, 'under');
+    add('⚽🥅','Gols',`Ambos marcaram (BTTS)`,       jogos.filter(d=>gTot(d)>=1&&sTot(d)>=1).length, n, 'over');
+    add('📈','Gols',`Over 2.5 gols no jogo`,         jogos.filter(d=>gTot(d)+sTot(d)>=3).length, n, 'over');
+    add('📉','Gols',`Under 2.5 gols no jogo`,        jogos.filter(d=>gTot(d)+sTot(d)<=2).length, n, 'under');
+    add('📉','Gols',`Under 1.5 gols no jogo`,        jogos.filter(d=>gTot(d)+sTot(d)<=1).length, n, 'under');
+
+    // ── ESCANTEIOS ──
+    const cPT  = d => isHome ? d.Canto_C_PT : d.Canto_V_PT;
+    const cST  = d => isHome ? d.Canto_C_ST : d.Canto_V_ST;
+    const cTot = d => cPT(d)+cST(d);
+
+    add('🚩','Escanteios',`2+ escanteios no 1° Tempo`,    jogos.filter(d=>cPT(d)>=2).length, n, 'over');
+    add('🚩','Escanteios',`3+ escanteios no 1° Tempo`,    jogos.filter(d=>cPT(d)>=3).length, n, 'over');
+    add('🚩','Escanteios',`4+ escanteios no 1° Tempo`,    jogos.filter(d=>cPT(d)>=4).length, n, 'over');
+    add('📉','Escanteios',`0-1 escanteios no 1° Tempo`,   jogos.filter(d=>cPT(d)<=1).length, n, 'under');
+    add('🚩','Escanteios',`2+ escanteios no 2° Tempo`,    jogos.filter(d=>cST(d)>=2).length, n, 'over');
+    add('🚩','Escanteios',`3+ escanteios no 2° Tempo`,    jogos.filter(d=>cST(d)>=3).length, n, 'over');
+    add('🚩','Escanteios',`4+ escanteios no 2° Tempo`,    jogos.filter(d=>cST(d)>=4).length, n, 'over');
+    add('📉','Escanteios',`0-1 escanteios no 2° Tempo`,   jogos.filter(d=>cST(d)<=1).length, n, 'under');
+    add('🚩','Escanteios',`5+ escanteios no jogo todo`,   jogos.filter(d=>cTot(d)>=5).length, n, 'over');
+    add('🚩','Escanteios',`7+ escanteios no jogo todo`,   jogos.filter(d=>cTot(d)>=7).length, n, 'over');
+    add('📉','Escanteios',`Até 3 escanteios no jogo todo`,jogos.filter(d=>cTot(d)<=3).length, n, 'under');
+
+    // ── FINALIZAÇÕES ──
+    const onPT  = d => isHome ? d.On_C_PT  : d.On_V_PT;
+    const onST  = d => isHome ? d.On_C_ST  : d.On_V_ST;
+    const offPT = d => isHome ? d.Off_C_PT : d.Off_V_PT;
+    const offST = d => isHome ? d.Off_C_ST : d.Off_V_ST;
+
+    add('🎯','Finalizações',`3+ chutes no alvo no 1° Tempo`,   jogos.filter(d=>onPT(d)>=3).length, n, 'over');
+    add('🎯','Finalizações',`5+ chutes no alvo no 1° Tempo`,   jogos.filter(d=>onPT(d)>=5).length, n, 'over');
+    add('📉','Finalizações',`0-2 chutes no alvo no 1° Tempo`,  jogos.filter(d=>onPT(d)<=2).length, n, 'under');
+    add('🎯','Finalizações',`3+ chutes no alvo no 2° Tempo`,   jogos.filter(d=>onST(d)>=3).length, n, 'over');
+    add('🎯','Finalizações',`5+ chutes no alvo no 2° Tempo`,   jogos.filter(d=>onST(d)>=5).length, n, 'over');
+    add('📉','Finalizações',`0-2 chutes no alvo no 2° Tempo`,  jogos.filter(d=>onST(d)<=2).length, n, 'under');
+    add('💨','Finalizações',`4+ chutes fora no 1° Tempo`,      jogos.filter(d=>offPT(d)>=4).length, n, 'over');
+    add('📉','Finalizações',`0-2 chutes fora no 1° Tempo`,     jogos.filter(d=>offPT(d)<=2).length, n, 'under');
+    add('💨','Finalizações',`4+ chutes fora no 2° Tempo`,      jogos.filter(d=>offST(d)>=4).length, n, 'over');
+    add('📉','Finalizações',`0-2 chutes fora no 2° Tempo`,     jogos.filter(d=>offST(d)<=2).length, n, 'under');
+
+    // ── CARTÕES ──
+    const amPT  = d => isHome ? d.Amarelo_Casa_PT : d.Amarelo_Vis_PT;
+    const amST  = d => isHome ? d.Amarelo_Casa_ST : d.Amarelo_Vis_ST;
+    const amTot = d => amPT(d)+amST(d);
+    const vmTot = d => isHome ? d.vm_casa : d.vm_vis;
+
+    add('🟨','Cartões',`Levou amarelo no 1° Tempo`,      jogos.filter(d=>amPT(d)>=1).length, n, 'over');
+    add('🟨','Cartões',`Levou 2+ amarelos no 1° Tempo`,  jogos.filter(d=>amPT(d)>=2).length, n, 'over');
+    add('📉','Cartões',`Sem amarelo no 1° Tempo`,         jogos.filter(d=>amPT(d)===0).length, n, 'under');
+    add('🟨','Cartões',`Levou amarelo no 2° Tempo`,      jogos.filter(d=>amST(d)>=1).length, n, 'over');
+    add('🟨','Cartões',`Levou 2+ amarelos no 2° Tempo`,  jogos.filter(d=>amST(d)>=2).length, n, 'over');
+    add('📉','Cartões',`Sem amarelo no 2° Tempo`,         jogos.filter(d=>amST(d)===0).length, n, 'under');
+    add('🟨','Cartões',`Levou 1+ amarelo no jogo`,       jogos.filter(d=>amTot(d)>=1).length, n, 'over');
+    add('🟨','Cartões',`Levou 3+ amarelos no jogo`,      jogos.filter(d=>amTot(d)>=3).length, n, 'over');
+    add('📉','Cartões',`Sem nenhum cartão no jogo`,       jogos.filter(d=>amTot(d)===0&&vmTot(d)===0).length, n, 'under');
+    add('🟥','Cartões',`Recebeu cartão vermelho`,         jogos.filter(d=>vmTot(d)>=1).length, n, 'over');
+
+    // ── CANTOS 10 MIN ──
+    const c10 = d => isHome ? d.C10_Casa : d.C10_Vis;
+    const c10Total = d => d.C10_Casa + d.C10_Vis; // total do jogo (ambos os times)
+    add('🚩','Cantos 10min',`Bateu escanteio nos 10 min iniciais`,      jogos.filter(d=>c10(d)>=1).length, n, 'over');
+    add('🚩','Cantos 10min',`2+ cantos nos 10 min iniciais`,            jogos.filter(d=>c10(d)>=2).length, n, 'over');
+    add('📉','Cantos 10min',`0 ou 1 canto nos 10 min (Under 1.5)`,     jogos.filter(d=>c10(d)<=1).length, n, 'under');
+    add('📉','Cantos 10min',`Nenhum canto nos 10 min iniciais`,         jogos.filter(d=>c10(d)===0).length, n, 'under');
+    // Total da partida (ambos os times juntos)
+    add('📉','Cantos 10min',`Jogo com Under 1.5 cantos totais 10min`,   jogos.filter(d=>c10Total(d)<=1).length, n, 'under');
+    add('🚩','Cantos 10min',`Jogo com 2+ cantos totais nos 10min`,      jogos.filter(d=>c10Total(d)>=2).length, n, 'over');
+
+    return entries.sort((a,b) => b.pct - a.pct);
+  }
+
+  const allCasaEntries = makeEntries(jogosEmCasa,   '🏠 Em Casa',     'casa');
+  const allForaEntries = makeEntries(jogosForaCasa,  '✈️ Fora de Casa','fora');
+
+  // Apply type filter
+  const typeFilter = scoutTypeFilter;
+  const casaEntries = typeFilter==='all' ? allCasaEntries : allCasaEntries.filter(e=>e.type===typeFilter);
+  const foraEntries = typeFilter==='all' ? allForaEntries : allForaEntries.filter(e=>e.type===typeFilter);
+
+  // Group by category for each context
+  const CAT_ORDER = ['Gols','Escanteios','Finalizações','Cartões','Cantos 10min'];
+  const CAT_ICONS = { 'Gols':'⚽', 'Escanteios':'🚩', 'Finalizações':'🎯', 'Cartões':'🟨', 'Cantos 10min':'🚩' };
+  const CAT_COLORS = {
+    'Gols':        'rgba(0,229,160,0.3)',
+    'Escanteios':  'rgba(76,201,240,0.3)',
+    'Finalizações':'rgba(255,209,102,0.3)',
+    'Cartões':     'rgba(255,77,109,0.3)',
+    'Cantos 10min':'rgba(76,201,240,0.25)',
+  };
+
+  const TYPE_BADGE = {
+    'over':    `<span style="font-size:9px;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:4px;background:rgba(0,229,160,0.15);color:var(--accent);border:1px solid rgba(0,229,160,0.3);margin-right:4px;">OVER</span>`,
+    'under':   `<span style="font-size:9px;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:4px;background:rgba(255,77,109,0.15);color:var(--accent2);border:1px solid rgba(255,77,109,0.3);margin-right:4px;">UNDER</span>`,
+    'neutral': '',
+  };
+
+  const renderCard = (e, i) => {
+    const cc = confClass(e.pct);
+    return `<div class="scout-card ${cc}" style="animation-delay:${i*0.03}s" title="${e.num} de ${e.den} jogos">
+      <div class="scout-pct-circle ${cc}">${e.pct}%</div>
+      <div class="scout-card-body">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:5px;">
+          ${TYPE_BADGE[e.type]}<span class="scout-card-label ${e.localClass}">${e.local}</span>
+        </div>
+        <div class="scout-card-text"><strong>${team}</strong> — ${e.text}</div>
+        <div class="scout-card-sub">${e.num} de ${e.den} jogo${e.den!==1?'s':''} · ${e.emoji}</div>
+      </div>
+    </div>`;
+  };
+
+  const renderSection = (title, entries) => {
+    const grouped = {};
+    CAT_ORDER.forEach(c => grouped[c] = []);
+    entries.forEach(e => { if(grouped[e.cat]) grouped[e.cat].push(e); });
+    const totalEntries = entries.length;
+    if (!totalEntries) return '';
+    let html = `<div class="scout-category">
+      <div class="scout-cat-title">
+        <span>${title}</span>
+        <span class="scout-cat-count">${totalEntries} entrad${totalEntries!==1?'as':'a'}</span>
+      </div>`;
+    CAT_ORDER.forEach(cat => {
+      const es = grouped[cat];
+      if (!es.length) return;
+      html += `<div style="margin-bottom:16px;">
+        <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          <span>${CAT_ICONS[cat]}</span> ${cat}
+          <span style="height:1px;flex:1;background:${CAT_COLORS[cat]};"></span>
+          <span style="font-size:10px;">${es.length}</span>
+        </div>
+        <div class="scout-grid">${es.map((e,i)=>renderCard(e,i)).join('')}</div>
+      </div>`;
+    });
+    html += `</div>`;
+    return html;
+  };
+
+  const totalEntries = casaEntries.length + foraEntries.length;
+  const overCount  = allCasaEntries.filter(e=>e.type==='over').length  + allForaEntries.filter(e=>e.type==='over').length;
+  const underCount = allCasaEntries.filter(e=>e.type==='under').length + allForaEntries.filter(e=>e.type==='under').length;
+
+  result.innerHTML = `
+    <div class="scout-team-header">
+      <div>
+        <div class="scout-team-name">${team}</div>
+        <div class="scout-meta">${todosJogos.length} jogo${todosJogos.length!==1?'s':''} nos dados · ${jogosEmCasa.length} em casa · ${jogosForaCasa.length} fora</div>
+      </div>
+      <div class="scout-summary-pills">
+        <div class="scout-pill">✅ <strong>${wins}</strong> V</div>
+        <div class="scout-pill">⬛ <strong>${draws}</strong> E</div>
+        <div class="scout-pill">❌ <strong>${losses}</strong> D</div>
+        <div class="scout-pill">⚽ <strong>${goalsFor}</strong> pró · <strong>${goalsAgainst}</strong> contra</div>
+        <div class="scout-pill" style="color:var(--accent);border-color:rgba(0,229,160,0.3)">📈 <strong>${overCount}</strong> OVER</div>
+        <div class="scout-pill" style="color:var(--accent2);border-color:rgba(255,77,109,0.3)">📉 <strong>${underCount}</strong> UNDER</div>
+      </div>
+    </div>
+    ${casaEntries.length ? renderSection('🏠 EM CASA', casaEntries) : ''}
+    ${foraEntries.length ? renderSection('✈️ FORA DE CASA', foraEntries) : ''}
+    ${!totalEntries ? `<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">Nenhuma entrada com ≥${scoutThreshold}% encontrada. Tente reduzir o limiar de confiança.</div>` : ''}
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  buildOverview(); buildGols(); buildEscanteios(); buildFinalizacoes(); buildCartoes(); buildC10();
+  buildUnderRanking();
+  // Init scout threshold buttons
+  setScoutThreshold(70);
+  setScoutTypeFilter('all');
+});
+
+// ===== UNDER RANKING =====
+let underCat = 'all';
+let underRankingData = [];
+
+function setUnderCat(cat) {
+  underCat = cat;
+  ['all','Gols','Escanteios','Finalizações','Cartões','Cantos 10min'].forEach(k => {
+    const id = 'ucat-'+(k==='all'?'all':k==='Gols'?'gols':k==='Escanteios'?'cant':k==='Finalizações'?'fin':k==='Cartões'?'card':'c10');
+    const btn = document.getElementById(id);
+    if (btn) { btn.classList.toggle('active', k===cat); btn.setAttribute('aria-pressed', k===cat); }
+  });
+  renderUnderRankingGrid();
+}
+
+function buildUnderRanking() {
+  const MIN = 2;
+  const THRESH = 0.70;
+  const teams = [...new Set(data.flatMap(d => [d.casa, d.vis]))];
+
+  underRankingData = teams.map(team => {
+    const emCasa   = data.filter(d => d.casa === team);
+    const foraCasa = data.filter(d => d.vis  === team);
+    const todos    = [...emCasa, ...foraCasa];
+    if (todos.length < MIN) return null;
+
+    const underEntries = [];
+
+    const scan = (jogos, isHome) => {
+      if (jogos.length < MIN) return;
+      const n = jogos.length;
+      const add = (cat, text, num) => {
+        const pct = Math.round(num/n*100);
+        if (pct/100 >= THRESH) underEntries.push({ cat, text, pct, num, n, isHome });
+      };
+
+      const gPT  = d => isHome ? d.Gols_C_PT  : d.Gols_V_PT;
+      const gST  = d => isHome ? d.Gols_C_ST  : d.Gols_V_ST;
+      const gTot = d => gPT(d)+gST(d);
+      const sTot = d => isHome ? d.Gols_V_PT+d.Gols_V_ST : d.Gols_C_PT+d.Gols_C_ST;
+
+      add('Gols',`Não marcou (jogo todo)`,          jogos.filter(d=>gTot(d)===0).length);
+      add('Gols',`Não marcou no 1° Tempo`,           jogos.filter(d=>gPT(d)===0).length);
+      add('Gols',`Não marcou no 2° Tempo`,           jogos.filter(d=>gST(d)===0).length);
+      add('Gols',`Não sofreu gol (Clean Sheet)`,     jogos.filter(d=>sTot(d)===0).length);
+      add('Gols',`Under 2.5 gols no jogo`,           jogos.filter(d=>gTot(d)+sTot(d)<=2).length);
+      add('Gols',`Under 1.5 gols no jogo`,           jogos.filter(d=>gTot(d)+sTot(d)<=1).length);
+
+      const cPT  = d => isHome ? d.Canto_C_PT : d.Canto_V_PT;
+      const cST  = d => isHome ? d.Canto_C_ST : d.Canto_V_ST;
+      const cTot = d => cPT(d)+cST(d);
+      add('Escanteios',`0-1 escanteios no 1° Tempo`,    jogos.filter(d=>cPT(d)<=1).length);
+      add('Escanteios',`0-1 escanteios no 2° Tempo`,    jogos.filter(d=>cST(d)<=1).length);
+      add('Escanteios',`Até 3 escanteios no jogo todo`, jogos.filter(d=>cTot(d)<=3).length);
+
+      const onPT  = d => isHome ? d.On_C_PT  : d.On_V_PT;
+      const onST  = d => isHome ? d.On_C_ST  : d.On_V_ST;
+      const offPT = d => isHome ? d.Off_C_PT : d.Off_V_PT;
+      const offST = d => isHome ? d.Off_C_ST : d.Off_V_ST;
+      add('Finalizações',`0-2 chutes no alvo no 1° Tempo`, jogos.filter(d=>onPT(d)<=2).length);
+      add('Finalizações',`0-2 chutes no alvo no 2° Tempo`, jogos.filter(d=>onST(d)<=2).length);
+      add('Finalizações',`0-2 chutes fora no 1° Tempo`,    jogos.filter(d=>offPT(d)<=2).length);
+      add('Finalizações',`0-2 chutes fora no 2° Tempo`,    jogos.filter(d=>offST(d)<=2).length);
+
+      const amPT  = d => isHome ? d.Amarelo_Casa_PT : d.Amarelo_Vis_PT;
+      const amST  = d => isHome ? d.Amarelo_Casa_ST : d.Amarelo_Vis_ST;
+      const amTot = d => amPT(d)+amST(d);
+      const vmTot = d => isHome ? d.vm_casa : d.vm_vis;
+      add('Cartões',`Sem amarelo no 1° Tempo`,   jogos.filter(d=>amPT(d)===0).length);
+      add('Cartões',`Sem amarelo no 2° Tempo`,   jogos.filter(d=>amST(d)===0).length);
+      add('Cartões',`Sem nenhum cartão no jogo`, jogos.filter(d=>amTot(d)===0&&vmTot(d)===0).length);
+
+      const c10 = d => isHome ? d.C10_Casa : d.C10_Vis;
+      add('Cantos 10min',`Nenhum canto nos 10 min`,           jogos.filter(d=>c10(d)===0).length);
+      add('Cantos 10min',`0 ou 1 canto nos 10 min (Under 1.5)`, jogos.filter(d=>c10(d)<=1).length);
+    };
+
+    scan(emCasa,   true);
+    scan(foraCasa, false);
+
+    return { team, underEntries, total: underEntries.length };
+  }).filter(Boolean).sort((a,b) => b.total - a.total);
+
+  // KPIs
+  const totalUnderEntries = underRankingData.reduce((s,t)=>s+t.total,0);
+  const teamsWithUnder = underRankingData.filter(t=>t.total>0).length;
+  const topTeam = underRankingData[0];
+  const avgUnder = (totalUnderEntries / (underRankingData.length||1)).toFixed(1);
+
+  document.getElementById('under-kpis').innerHTML = [
+    {l:'Times com Padrão Under', v:teamsWithUnder,      s:`de ${underRankingData.length} times`, c:'c-red'},
+    {l:'Total de Entradas Under',v:totalUnderEntries,   s:`≥70% de frequência`,                  c:'c-red'},
+    {l:'Média por Time',         v:avgUnder,            s:`entradas under/time`,                 c:'c-yellow'},
+    {l:'Mais Under',             v:topTeam?.team||'—',  s:`${topTeam?.total||0} entradas`,       c:'c-blue'},
+  ].map((c,i)=>`<div class="ov-card" style="animation-delay:${i*0.07}s">
+    <div class="ov-label">${c.l}</div>
+    <div class="ov-val ${c.c}" style="font-size:${typeof c.v==='string'&&c.v.length>8?'22px':'42px'}">${c.v}</div>
+    <div class="ov-sub">${c.s}</div>
+  </div>`).join('');
+
+  renderUnderRankingGrid();
+}
+
+function renderUnderRankingGrid() {
+  const grid = document.getElementById('under-ranking-grid');
+  const filtered = underRankingData.map(t => ({
+    ...t,
+    filtered: underCat==='all' ? t.underEntries : t.underEntries.filter(e=>e.cat===underCat)
+  })).filter(t=>t.filtered.length>0).sort((a,b)=>b.filtered.length-a.filtered.length);
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">Nenhum time com padrões under nesta categoria.</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((t, idx) => {
+    const topEntries = t.filtered.slice(0,3);
+    return `<div class="scout-category" style="animation-delay:${idx*0.04}s">
+      <div class="scout-cat-title" style="cursor:pointer;" onclick="goToScoutUnder('${t.team.replace(/'/g,"\\'")}')">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent2);">#${idx+1}</span>
+        <span style="margin-left:6px;">${t.team}</span>
+        <span class="scout-cat-count" style="background:rgba(255,77,109,0.12);color:var(--accent2);">${t.filtered.length} under</span>
+        <span style="font-size:11px;color:var(--accent);margin-left:8px;">🔎 ver scout →</span>
+      </div>
+      <div class="scout-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">
+        ${topEntries.map((e,i) => `
+          <div class="scout-card conf-low" style="border-left-color:var(--accent2);animation-delay:${i*0.04}s">
+            <div class="scout-pct-circle" style="background:rgba(255,77,109,0.1);color:var(--accent2);border-color:rgba(255,77,109,0.4);">${e.pct}%</div>
+            <div class="scout-card-body">
+              <span style="font-size:9px;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:4px;background:rgba(255,77,109,0.15);color:var(--accent2);border:1px solid rgba(255,77,109,0.3);display:inline-block;margin-bottom:5px;">📉 UNDER · ${e.cat}</span>
+              <div class="scout-card-text"><strong>${t.team}</strong> — ${e.text}</div>
+              <div class="scout-card-sub">${e.num} de ${e.n} jogos · ${e.isHome?'🏠 Casa':'✈️ Fora'}</div>
+            </div>
+          </div>`).join('')}
+        ${t.filtered.length > 3 ? `<div style="display:flex;align-items:center;justify-content:center;background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:16px;cursor:pointer;color:var(--accent2);font-size:13px;font-weight:600;" onclick="goToScoutUnder('${t.team.replace(/'/g,"\\'")}')">+${t.filtered.length-3} mais → ver scout completo</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goToScoutUnder(team) {
+  goToScout(team);
+  // Switch to under filter after a tiny delay for rendering
+  setTimeout(() => setScoutTypeFilter('under'), 100);
+}
+
+// ===== MATCH ANALYZER =====
+let maHome = null;
+let maAway = null;
+
+function maShowDropdown(side) {
+  maFilterDropdown(side, document.getElementById('ma-'+side+'-input').value);
+}
+
+function maFilterDropdown(side, q) {
+  const dd = document.getElementById('ma-'+side+'-dropdown');
+  const teams = getAllTeams().filter(t => !q.trim() || t.toLowerCase().includes(q.trim().toLowerCase()));
+  if (!teams.length) { dd.style.display='none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = teams.slice(0,15).map(t => {
+    const n = allData.filter(d=>d.casa===t||d.vis===t).length;
+    return `<div class="ma-dropdown-item" onclick="maSelectTeam('${side}','${t.replace(/'/g,"\\'")}')">${t} <span style="float:right;font-size:11px;color:var(--muted)">${n}j</span></div>`;
+  }).join('');
+}
+
+function maSelectTeam(side, team) {
+  if (side==='home') { maHome=team; document.getElementById('ma-home-input').value=team; }
+  else               { maAway=team; document.getElementById('ma-away-input').value=team; }
+  document.getElementById('ma-'+side+'-dropdown').style.display='none';
+  document.getElementById('ma-btn').disabled = !(maHome && maAway);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ma-team-wrap')) {
+    document.querySelectorAll('.ma-dropdown').forEach(d=>d.style.display='none');
+  }
+});
+
+// ---- stats helper ----
+function teamProfile(team, asHome) {
+  const jogos = asHome
+    ? data.filter(d=>d.casa===team)
+    : data.filter(d=>d.vis===team);
+  if (!jogos.length) return null;
+  const n = jogos.length;
+
+  const avg = fn => (jogos.reduce((s,d)=>s+fn(d),0)/n);
+  const pct = fn => Math.round(jogos.filter(fn).length/n*100);
+
+  return {
+    n,
+    // Gols marcados
+    golsPT:   avg(d=>asHome?d.Gols_C_PT:d.Gols_V_PT),
+    golsST:   avg(d=>asHome?d.Gols_C_ST:d.Gols_V_ST),
+    golsTot:  avg(d=>asHome?d.gols_casa:d.gols_vis),
+    // Gols sofridos
+    sofPT:    avg(d=>asHome?d.Gols_V_PT:d.Gols_C_PT),
+    sofST:    avg(d=>asHome?d.Gols_V_ST:d.Gols_C_ST),
+    sofTot:   avg(d=>asHome?d.gols_vis:d.gols_casa),
+    // Escanteios
+    cantPT:   avg(d=>asHome?d.Canto_C_PT:d.Canto_V_PT),
+    cantST:   avg(d=>asHome?d.Canto_C_ST:d.Canto_V_ST),
+    cantTot:  avg(d=>asHome?d.cant_casa:d.cant_vis),
+    // Cartões
+    amPT:     avg(d=>asHome?d.Amarelo_Casa_PT:d.Amarelo_Vis_PT),
+    amST:     avg(d=>asHome?d.Amarelo_Casa_ST:d.Amarelo_Vis_ST),
+    amTot:    avg(d=>asHome?d.am_casa:d.am_vis),
+    // Fin
+    onTot:    avg(d=>asHome?d.on_casa:d.on_vis),
+    // C10
+    c10:      avg(d=>asHome?d.C10_Casa:d.C10_Vis),
+    // % marcou
+    pctMarcouPT: pct(d=>(asHome?d.Gols_C_PT:d.Gols_V_PT)>=1),
+    pctMarcouST: pct(d=>(asHome?d.Gols_C_ST:d.Gols_V_ST)>=1),
+    pctCS:       pct(d=>(asHome?d.gols_vis:d.gols_casa)===0),
+    pctBTTS_own: pct(d=>(asHome?d.gols_casa:d.gols_vis)>=1),
+  };
+}
+
+// Calc market probability from combined real match data
+function calcMarketProb(line, valueFn) {
+  const homeGames = data.filter(d=>d.casa===maHome);
+  const awayGames = data.filter(d=>d.vis===maAway);
+  if (!homeGames.length || !awayGames.length) return null;
+
+  // valueFn(hg, ag) deve retornar um número (o total do mercado para esse par de jogos)
+  // Comparamos esse número com line aqui dentro
+  let hits = 0;
+  const total = homeGames.length * awayGames.length;
+  homeGames.forEach(hg => {
+    awayGames.forEach(ag => {
+      if (valueFn(hg, ag)) hits++;  // valueFn já retorna boolean (ex: totalG(h,a) > 1.5)
+    });
+  });
+  return Math.round(hits/total*100);
+}
+
+function gradientBar(pct) {
+  if (pct >= 75) return 'var(--accent)';
+  if (pct >= 55) return 'var(--accent3)';
+  if (pct >= 40) return 'var(--accent4)';
+  return 'var(--accent2)';
+}
+
+function toneClass(pct) {
+  if (pct >= 75) return 'hot';
+  if (pct >= 55) return 'warm';
+  if (pct <= 30) return 'danger';
+  return 'cold';
+}
+
+function maCard(market, line, pct, badgeType, detail, delay=0) {
+  if (pct===null) return '';
+  const tone = toneClass(pct);
+  const barColor = gradientBar(pct);
+  const badge = badgeType==='over'  ? `<span class="ma-card-badge over">📈 OVER</span>`
+              : badgeType==='under' ? `<span class="ma-card-badge under">📉 UNDER</span>`
+              : badgeType==='btts'  ? `<span class="ma-card-badge btts">⚽ BTTS</span>`
+              : '';
+  return `<div class="ma-card ${tone}" style="animation-delay:${delay}s">
+    ${badge}
+    <div class="ma-card-market">${market}</div>
+    <div class="ma-card-line">${line}</div>
+    <div class="ma-card-prob ${tone}">${pct}%</div>
+    <div class="ma-card-bar"><div class="ma-card-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    <div class="ma-card-detail">${detail}</div>
+  </div>`;
+}
+
+function runMatchAnalysis() {
+  if (!maHome || !maAway) return;
+  const ph = document.getElementById('ma-placeholder');
+  const res = document.getElementById('ma-result');
+  ph.style.display='none'; res.style.display='block';
+
+  const H = teamProfile(maHome, true);
+  const A = teamProfile(maAway, false);
+
+  if (!H || !A) {
+    res.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted);">Times sem dados suficientes para análise.</div>`;
+    return;
+  }
+
+  // Expected values (combined)
+  const expGols     = H.golsTot + A.golsTot;
+  const expGolsSof  = H.sofTot + A.sofTot;  // redundant cross-check
+  const expCantTot  = H.cantTot + A.cantTot;
+  const expAmTot    = H.amTot + A.amTot;
+  const expGolsPT   = H.golsPT + A.golsPT;
+  const expCantPT   = H.cantPT + A.cantPT;
+  const expC10      = H.c10 + A.c10;
+
+  // Market probabilities via simulação combinatória correta:
+  // Para cada par (jogo do maHome em casa, jogo do maAway fora):
+  //   → estimamos o total da partida hipotética somando os totais de cada jogo
+  //   → verificamos se passa da linha
+  // Isso captura a distribuição real de cada time no seu contexto (casa/fora)
+  const p = (_line, fn) => calcMarketProb(_line, fn);
+
+  // Total de gols da partida hipotética = total gols jogo H + total gols jogo A
+  const totalG   = (h,a) => (h.gols_casa + h.gols_vis) + (a.gols_casa + a.gols_vis);
+  const totalGPT = (h,a) => (h.Gols_C_PT + h.Gols_V_PT) + (a.Gols_C_PT + a.Gols_V_PT);
+  const totalC   = (h,a) => (h.cant_casa + h.cant_vis)  + (a.cant_casa + a.cant_vis);
+  const totalCPT = (h,a) => (h.Canto_C_PT + h.Canto_V_PT) + (a.Canto_C_PT + a.Canto_V_PT);
+  const totalAm  = (h,a) => (h.am_casa + h.am_vis)      + (a.am_casa + a.am_vis);
+  const totalC10 = (h,a) => (h.C10_Casa + h.C10_Vis)    + (a.C10_Casa + a.C10_Vis);
+
+  // Gols totais
+  const pOver05   = p(0.5,  (h,a)=> totalG(h,a) > 0.5);
+  const pOver15G  = p(1.5,  (h,a)=> totalG(h,a) > 1.5);
+  const pOver25G  = p(2.5,  (h,a)=> totalG(h,a) > 2.5);
+  const pOver35G  = p(3.5,  (h,a)=> totalG(h,a) > 3.5);
+  const pUnder15G = p(1.5,  (h,a)=> totalG(h,a) <= 1.5);
+  const pUnder25G = p(2.5,  (h,a)=> totalG(h,a) <= 2.5);
+  // BTTS: maHome marcou em casa no jogo h E maAway marcou fora no jogo a
+  const pBTTS     = p(0,    (h,a)=> h.gols_casa>=1 && a.gols_vis>=1);
+  const pNoBTTS   = p(0,    (h,a)=>!(h.gols_casa>=1 && a.gols_vis>=1));
+  // 1° Tempo gols totais
+  const pOver05PT  = p(0.5, (h,a)=> totalGPT(h,a) > 0.5);
+  const pOver15PT  = p(1.5, (h,a)=> totalGPT(h,a) > 1.5);
+  const pUnder05PT = p(0.5, (h,a)=> totalGPT(h,a) <= 0.5);
+
+  // Escanteios totais
+  const pCant75   = p(7.5,  (h,a)=> totalC(h,a) > 7.5);
+  const pCant95   = p(9.5,  (h,a)=> totalC(h,a) > 9.5);
+  const pCant115  = p(11.5, (h,a)=> totalC(h,a) > 11.5);
+  const pCantU75  = p(7.5,  (h,a)=> totalC(h,a) <= 7.5);
+  const pCantU55  = p(5.5,  (h,a)=> totalC(h,a) <= 5.5);
+  const pCantPT45 = p(4.5,  (h,a)=> totalCPT(h,a) > 4.5);
+  const pCantPT35 = p(3.5,  (h,a)=> totalCPT(h,a) > 3.5);
+  const pCantPTU3 = p(3.5,  (h,a)=> totalCPT(h,a) <= 3.5);
+
+  // Cartões totais
+  const pCard25   = p(2.5, (h,a)=> totalAm(h,a) > 2.5);
+  const pCard35   = p(3.5, (h,a)=> totalAm(h,a) > 3.5);
+  const pCard45   = p(4.5, (h,a)=> totalAm(h,a) > 4.5);
+  const pCardU25  = p(2.5, (h,a)=> totalAm(h,a) <= 2.5);
+  const pCardU15  = p(1.5, (h,a)=> totalAm(h,a) <= 1.5);
+
+  // Cantos 10min totais
+  const pC10_15   = p(1.5, (h,a)=> totalC10(h,a) > 1.5);
+  const pC10_25   = p(2.5, (h,a)=> totalC10(h,a) > 2.5);
+  const pC10U15   = p(1.5, (h,a)=> totalC10(h,a) <= 1.5);
+
+  const f1 = v => v.toFixed(1);
+
+  // Médias esperadas para o banner (total do jogo = média H + média A)
+  const avgGolsJogo   = (H.golsTot + H.sofTot) + (A.golsTot + A.sofTot);
+  const avgCantJogo   = H.cantTot + A.cantTot;
+  const avgAmJogo     = H.amTot   + A.amTot;
+  const avgGolsPTJogo = (H.golsPT + H.sofPT)   + (A.golsPT + A.sofPT);
+
+  // ---- render ----
+  res.innerHTML = `
+    <div class="ma-match-banner">
+      <div>
+        <div class="ma-banner-teams">
+          <span class="ma-banner-home">${maHome}</span>
+          <span class="ma-banner-vs">VS</span>
+          <span class="ma-banner-away">${maAway}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px;">Baseado em ${H.n} jogos em casa do ${maHome} e ${A.n} jogos fora do ${maAway}</div>
+      </div>
+        <div class="ma-banner-stats">
+        <div class="ma-banner-pill">⚽ Gols esperados/jogo: <strong>${f1(avgGolsJogo)}</strong></div>
+        <div class="ma-banner-pill">🚩 Cantos esperados: <strong>${f1(avgCantJogo)}</strong></div>
+        <div class="ma-banner-pill">🟨 Cartões esperados: <strong>${f1(avgAmJogo)}</strong></div>
+      </div>
+    </div>
+
+    <!-- Perfil dos times -->
+    <div class="ma-team-stats-grid">
+      <div class="ma-team-stat-box">
+        <div class="ma-team-stat-title" style="color:var(--accent4)">🏠 ${maHome} — em casa (${H.n}j)</div>
+        ${[
+          ['Gols marcados/jogo',   f1(H.golsTot)],
+          ['Gols sofridos/jogo',   f1(H.sofTot)],
+          ['Escanteios/jogo',      f1(H.cantTot)],
+          ['Amarelos/jogo',        f1(H.amTot)],
+          ['Fin. no alvo/jogo',    f1(H.onTot)],
+          ['Cantos 10min/jogo',    f1(H.c10)],
+          ['% marcou no jogo',     H.pctMarcouPT+H.pctMarcouST>0 ? Math.min(99,H.pctBTTS_own)+'%' : '—'],
+          ['% clean sheet',        H.pctCS+'%'],
+        ].map(([l,v])=>`<div class="ma-stat-row"><span class="ma-stat-label">${l}</span><span class="ma-stat-val">${v}</span></div>`).join('')}
+      </div>
+      <div class="ma-team-stat-box">
+        <div class="ma-team-stat-title" style="color:var(--accent2)">✈️ ${maAway} — fora de casa (${A.n}j)</div>
+        ${[
+          ['Gols marcados/jogo',   f1(A.golsTot)],
+          ['Gols sofridos/jogo',   f1(A.sofTot)],
+          ['Escanteios/jogo',      f1(A.cantTot)],
+          ['Amarelos/jogo',        f1(A.amTot)],
+          ['Fin. no alvo/jogo',    f1(A.onTot)],
+          ['Cantos 10min/jogo',    f1(A.c10)],
+          ['% marcou no jogo',     A.pctBTTS_own+'%'],
+          ['% clean sheet',        A.pctCS+'%'],
+        ].map(([l,v])=>`<div class="ma-stat-row"><span class="ma-stat-label">${l}</span><span class="ma-stat-val">${v}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- GOLS -->
+    <div class="ma-market-section">
+      <div class="ma-market-title">⚽ MERCADO DE GOLS</div>
+      <div class="ma-grid">
+        ${maCard('Gols no Jogo','Over 0.5', pOver05,  'over',  `Média total esperada: <span>${f1(avgGolsJogo)}</span> gols/jogo`, 0.0)}
+        ${maCard('Gols no Jogo','Over 1.5', pOver15G, 'over',  `${maHome} média ${f1((H.golsTot+H.sofTot)/2)}/j · ${maAway} média ${f1((A.golsTot+A.sofTot)/2)}/j fora`, 0.05)}
+        ${maCard('Gols no Jogo','Over 2.5', pOver25G, 'over',  `Linha mais apostada · média combinada <span>${f1(avgGolsJogo)}</span>`, 0.1)}
+        ${maCard('Gols no Jogo','Over 3.5', pOver35G, 'over',  `Jogos de alto volume de gols`, 0.15)}
+        ${maCard('Gols no Jogo','Under 1.5',pUnder15G,'under', `Total gols/jogo: ${maHome} ${f1((H.golsTot+H.sofTot)/2)} · ${maAway} ${f1((A.golsTot+A.sofTot)/2)} fora`, 0.2)}
+        ${maCard('Gols no Jogo','Under 2.5',pUnder25G,'under', `Jogos de baixo volume de gols`, 0.25)}
+        ${maCard('Ambos Marcam','BTTS — Sim', pBTTS,  'btts',  `${maHome} marcou em ${H.pctBTTS_own}% em casa · ${maAway} marcou em ${A.pctBTTS_own}% fora`, 0.3)}
+        ${maCard('Ambos Marcam','BTTS — Não', pNoBTTS,'under', `Clean Sheet ${maHome}: ${H.pctCS}% · Clean Sheet ${maAway}: ${A.pctCS}%`, 0.35)}
+        ${maCard('Gols 1° Tempo','Over 0.5', pOver05PT,'over', `Média 1°T: ${maHome} ${f1((H.golsPT+H.sofPT)/2)}/j · ${maAway} ${f1((A.golsPT+A.sofPT)/2)}/j fora`, 0.4)}
+        ${maCard('Gols 1° Tempo','Over 1.5', pOver15PT,'over', `Jogos com gols antecipados em ambos os times`, 0.45)}
+        ${maCard('Gols 1° Tempo','Under 0.5',pUnder05PT,'under',`1° Tempo sem gols — média: <span>${f1(avgGolsPTJogo)}</span>`, 0.5)}
+      </div>
+    </div>
+
+    <!-- ESCANTEIOS -->
+    <div class="ma-market-section">
+      <div class="ma-market-title">🚩 MERCADO DE ESCANTEIOS</div>
+      <div class="ma-grid">
+        ${maCard('Escanteios no Jogo','Over 7.5',  pCant75,  'over',  `Média combinada: <span>${f1(H.cantTot+A.cantTot)}</span>/jogo`, 0.0)}
+        ${maCard('Escanteios no Jogo','Over 9.5',  pCant95,  'over',  `${maHome} bate ${f1(H.cantTot)}/j casa · ${maAway} bate ${f1(A.cantTot)}/j fora`, 0.05)}
+        ${maCard('Escanteios no Jogo','Over 11.5', pCant115, 'over',  `Jogos de alto volume de escanteios`, 0.1)}
+        ${maCard('Escanteios no Jogo','Under 7.5', pCantU75, 'under', `Jogos de baixo volume de escanteios`, 0.15)}
+        ${maCard('Escanteios no Jogo','Under 5.5', pCantU55, 'under', `Partidas com poucos escanteios no total`, 0.2)}
+        ${maCard('Escanteios 1° Tempo','Over 3.5', pCantPT35,'over',  `${maHome}: ${f1(H.cantPT)}/j · ${maAway}: ${f1(A.cantPT)}/j no 1°T`, 0.25)}
+        ${maCard('Escanteios 1° Tempo','Over 4.5', pCantPT45,'over',  `Volume alto já no 1° tempo`, 0.3)}
+        ${maCard('Escanteios 1° Tempo','Under 3.5',pCantPTU3,'under', `1° tempo com poucos escanteios`, 0.35)}
+      </div>
+    </div>
+
+    <!-- CARTÕES -->
+    <div class="ma-market-section">
+      <div class="ma-market-title">🟨 MERCADO DE CARTÕES</div>
+      <div class="ma-grid">
+        ${maCard('Cartões no Jogo','Over 2.5',  pCard25,  'over',  `Média combinada: <span>${f1(H.amTot+A.amTot)}</span>/jogo`, 0.0)}
+        ${maCard('Cartões no Jogo','Over 3.5',  pCard35,  'over',  `${maHome}: ${f1(H.amTot)}/j casa · ${maAway}: ${f1(A.amTot)}/j fora`, 0.05)}
+        ${maCard('Cartões no Jogo','Over 4.5',  pCard45,  'over',  `Jogos com muita marcação`, 0.1)}
+        ${maCard('Cartões no Jogo','Under 2.5', pCardU25, 'under', `Jogos disciplinados`, 0.15)}
+        ${maCard('Cartões no Jogo','Under 1.5', pCardU15, 'under', `Partidas com pouquíssimos cartões`, 0.2)}
+      </div>
+    </div>
+
+    <!-- CANTOS 10 MIN -->
+    <div class="ma-market-section">
+      <div class="ma-market-title">🚩 CANTOS NOS PRIMEIROS 10 MINUTOS</div>
+      <div class="ma-grid">
+        ${maCard('Cantos 10min — Total','Over 1.5', pC10_15, 'over',
+          `${maHome}: média ${f1(H.c10)}/j casa · ${maAway}: média ${f1(A.c10)}/j fora`, 0.0)}
+        ${maCard('Cantos 10min — Total','Over 2.5', pC10_25, 'over',
+          `Início de jogo movimentado — 3+ cantos nos 10min`, 0.05)}
+        ${maCard('Cantos 10min — Total','Under 1.5 (0 ou 1 canto)', pC10U15, 'under',
+          `${maHome} teve 0-1 canto em ${Math.round(data.filter(d=>d.casa===maHome&&(d.C10_Casa+d.C10_Vis)<=1).length/(data.filter(d=>d.casa===maHome).length||1)*100)}% em casa · ${maAway} em ${Math.round(data.filter(d=>d.vis===maAway&&(d.C10_Casa+d.C10_Vis)<=1).length/(data.filter(d=>d.vis===maAway).length||1)*100)}% fora`, 0.1)}
+      </div>
+    </div>
+  `;
+}
+
+
+
+function goToScout(team) {
+  const navItem = [...document.querySelectorAll('.nav-item')].find(el => el.textContent.includes('Scout'));
+  if (navItem) setView('scout', navItem);
+  selectScoutTeam(team);
+  document.getElementById('content').scrollTop = 0;
+}
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('menu-toggle');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen);
+  btn.textContent = isOpen ? '✕' : '☰';
+  if (isOpen) sidebar.querySelector('.nav-item.active').focus();
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('menu-toggle');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = '☰';
+}
+
+// ===== TEAM SEARCH =====
+function filterTeamSearch(q) {
+  const term = q.trim().toLowerCase();
+  document.querySelectorAll('.ranking-table tbody tr').forEach(row => {
+    const team = (row.dataset.team || '').toLowerCase();
+    row.style.display = (!term || team.includes(term)) ? '' : 'none';
+  });
+}
+
+// ===== ARIA PRESSED UPDATE for filter buttons =====
+function updateAriaPressed(groupSelector, activeId) {
+  document.querySelectorAll(groupSelector).forEach(btn => {
+    btn.setAttribute('aria-pressed', btn.id === activeId ? 'true' : 'false');
+  });
+}
+
+function setView(view, el) {
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('content').scrollTop=0;
+  // Close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) closeSidebar();
+}
+</script>
+</body>
+</html>
