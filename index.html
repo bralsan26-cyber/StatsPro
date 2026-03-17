@@ -951,6 +951,84 @@
     .ma-team-stats-grid { grid-template-columns: 1fr; }
     .ma-banner-teams { font-size: 20px; }
   }
+
+  /* ===== HANDICAP / DOUBLE CHANCE ===== */
+  .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 10px; }
+  .hc-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    animation: fadeUp 0.3s ease both; transition: transform 0.15s, border-color 0.2s;
+  }
+  .hc-card:hover { transform: translateY(-2px); }
+  .hc-card.hot    { border-color: rgba(0,229,160,0.45);  background: linear-gradient(135deg,rgba(0,229,160,0.08),var(--card)); }
+  .hc-card.warm   { border-color: rgba(255,209,102,0.4); background: linear-gradient(135deg,rgba(255,209,102,0.06),var(--card)); }
+  .hc-card.cold   { border-color: rgba(90,98,120,0.4); opacity:0.7; }
+  .hc-card-market { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .hc-card-line   { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--text); letter-spacing:1px; }
+  .hc-card-prob   { font-family: 'Bebas Neue', sans-serif; font-size: 40px; line-height: 1; }
+  .hc-card-prob.hot  { color: var(--accent); }
+  .hc-card-prob.warm { color: var(--accent3); }
+  .hc-card-prob.cold { color: var(--muted); }
+  .hc-card-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .hc-card-bar-fill { height: 100%; border-radius: 3px; }
+  .hc-card-detail { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .hc-card-detail span { color: var(--text); font-weight: 600; }
+
+  /* ===== PADRÕES AVANÇADOS ===== */
+  .pad-section { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
+  .pad-section-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px;
+    color: #c084fc; margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(192,132,252,0.25);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 10px; }
+  .pad-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 13px; padding: 14px 16px;
+    animation: fadeUp 0.3s ease both; transition: border-color 0.2s;
+  }
+  .pad-card:hover { border-color: rgba(192,132,252,0.4); }
+  .pad-card.strong { border-left: 3px solid #c084fc; background: linear-gradient(135deg,rgba(192,132,252,0.06),var(--card)); }
+  .pad-card.moderate { border-left: 3px solid var(--accent3); }
+  .pad-trigger {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px;
+    background: rgba(192,132,252,0.12); color: #c084fc; border: 1px solid rgba(192,132,252,0.3);
+  }
+  .pad-then {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px;
+    background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.3);
+  }
+  .pad-text { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+  .pad-text strong { color: var(--accent3); }
+  .pad-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .pad-stat-pill {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 10px; font-size: 11px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+  }
+  .pad-stat-pill .pv { font-family: 'Bebas Neue', sans-serif; font-size: 20px; line-height: 1; }
+  .pad-stat-pill .pl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .pad-stat-pill.highlight .pv { color: var(--accent); }
+  .pad-stat-pill.highlight2 .pv { color: var(--accent3); }
+  .pad-stat-pill.highlight3 .pv { color: #c084fc; }
+
+  .pad-team-header {
+    background: linear-gradient(135deg, rgba(192,132,252,0.1), rgba(192,132,252,0.03));
+    border: 1px solid rgba(192,132,252,0.3); border-radius: 16px;
+    padding: 18px 22px; margin-bottom: 22px; animation: fadeUp 0.4s ease both;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .pad-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; color: #c084fc; }
+
+  @media (max-width: 768px) {
+    .pad-grid { grid-template-columns: 1fr; }
+    .hc-grid { grid-template-columns: 1fr 1fr; }
+    .pad-team-name { font-size: 26px; }
+  }
 </style>
 </head>
 <body>
@@ -983,6 +1061,7 @@
     <div class="nav-item" onclick="setView('scout',this)" role="button" tabindex="0" aria-label="Scout por Time" onkeydown="if(event.key==='Enter'||event.key===' ')setView('scout',this)" style="color:var(--accent);border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.04)"><span class="nav-icon" aria-hidden="true">🔎</span> Scout por Time <span class="badge" style="background:rgba(0,229,160,0.15);color:var(--accent)">NEW</span></div>
     <div class="nav-item" onclick="setView('underranking',this)" role="button" tabindex="0" aria-label="Ranking Under" onkeydown="if(event.key==='Enter'||event.key===' ')setView('underranking',this)" style="color:var(--accent2);border-color:rgba(255,77,109,0.2);background:rgba(255,77,109,0.04)"><span class="nav-icon" aria-hidden="true">📉</span> Ranking Under <span class="badge" style="background:rgba(255,77,109,0.15);color:var(--accent2)">NEW</span></div>
     <div class="nav-item" onclick="setView('matchanalyzer',this)" role="button" tabindex="0" aria-label="Analisar Partida" onkeydown="if(event.key==='Enter'||event.key===' ')setView('matchanalyzer',this)" style="color:var(--accent3);border-color:rgba(255,209,102,0.25);background:rgba(255,209,102,0.05)"><span class="nav-icon" aria-hidden="true">⚡</span> Analisar Partida <span class="badge" style="background:rgba(255,209,102,0.18);color:var(--accent3)">HOT</span></div>
+    <div class="nav-item" onclick="setView('padroes',this)" role="button" tabindex="0" aria-label="Padrões Avançados" onkeydown="if(event.key==='Enter'||event.key===' ')setView('padroes',this)" style="color:#c084fc;border-color:rgba(192,132,252,0.25);background:rgba(192,132,252,0.05)"><span class="nav-icon" aria-hidden="true">🧠</span> Padrões Avançados <span class="badge" style="background:rgba(192,132,252,0.18);color:#c084fc">NEW</span></div>
   </div>
 </nav>
 
@@ -1322,6 +1401,39 @@
         <div style="font-size:13px;">Digite o nome de cada time nos campos acima para ver as probabilidades do próximo jogo</div>
       </div>
       <div id="ma-result" style="display:none;"></div>
+    </div>
+
+    <!-- PADRÕES AVANÇADOS -->
+    <div id="view-padroes" class="view">
+      <div class="section-header"><div class="section-icon">🧠</div><div>
+        <div class="section-title">PADRÕES AVANÇADOS</div>
+        <div class="section-desc">Correlações entre períodos · O que o 1° tempo prevê para o resto do jogo</div>
+      </div></div>
+
+      <!-- Seletor de time -->
+      <div style="margin-bottom:24px;">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Selecionar Time</div>
+        <div style="position:relative;max-width:420px;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none;">🧠</span>
+          <input type="search" id="pad-search" placeholder="Digite o nome do time…" autocomplete="off"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px 13px 44px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s;border-color:rgba(192,132,252,0.3)"
+            oninput="padFilterDropdown(this.value)" onfocus="padShowDropdown()" aria-label="Buscar time para padrões avançados">
+          <div id="pad-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;z-index:100;max-height:260px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.4);"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;align-self:center;">Contexto:</span>
+          <button class="c10-filter-btn active" id="pad-ctx-casa" onclick="setPadContext('casa')" aria-pressed="true">🏠 Em Casa</button>
+          <button class="c10-filter-btn" id="pad-ctx-fora" onclick="setPadContext('fora')" aria-pressed="false">✈️ Fora</button>
+          <button class="c10-filter-btn" id="pad-ctx-todos" onclick="setPadContext('todos')" aria-pressed="false">🌍 Todos</button>
+        </div>
+      </div>
+
+      <div id="pad-placeholder" style="text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:16px;">🧠</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:8px;">SELECIONE UM TIME</div>
+        <div style="font-size:13px;">Analisa o que acontece no 2°T e no resultado com base no que ocorreu no 1°T</div>
+      </div>
+      <div id="pad-result" style="display:none;"></div>
     </div>
 
   </div>
@@ -3472,7 +3584,6 @@ function renderUnderRankingGrid() {
 
 function goToScoutUnder(team) {
   goToScout(team);
-  // Switch to under filter after a tiny delay for rendering
   setTimeout(() => setScoutTypeFilter('under'), 100);
 }
 
@@ -3787,17 +3898,509 @@ function runMatchAnalysis() {
           `${maHome} teve 0-1 canto em ${Math.round(data.filter(d=>d.casa===maHome&&(d.C10_Casa+d.C10_Vis)<=1).length/(data.filter(d=>d.casa===maHome).length||1)*100)}% em casa · ${maAway} em ${Math.round(data.filter(d=>d.vis===maAway&&(d.C10_Casa+d.C10_Vis)<=1).length/(data.filter(d=>d.vis===maAway).length||1)*100)}% fora`, 0.1)}
       </div>
     </div>
+
+    <!-- HANDICAP & DOUBLE CHANCE -->
+    ${renderHandicap(H, A, f1)}
   `;
 }
 
+function hcCard(market, line, pct, detail, delay=0) {
+  if (pct===null) return '';
+  const tone = toneClass(pct);
+  const barColor = gradientBar(pct);
+  return `<div class="hc-card ${tone}" style="animation-delay:${delay}s">
+    <div class="hc-card-market">${market}</div>
+    <div class="hc-card-line">${line}</div>
+    <div class="hc-card-prob ${tone}">${pct}%</div>
+    <div class="hc-card-bar"><div class="hc-card-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    <div class="hc-card-detail">${detail}</div>
+  </div>`;
+}
 
+function renderHandicap(H, A, f1) {
+  const homeGames = data.filter(d=>d.casa===maHome);
+  const awayGames = data.filter(d=>d.vis===maAway);
+  const n = homeGames.length * awayGames.length;
+  if (!n) return '';
+
+  const pct = fn => { let h=0; homeGames.forEach(hg=>awayGames.forEach(ag=>{ if(fn(hg,ag)) h++; })); return Math.round(h/n*100); };
+
+  // Resultado FT (baseado em gols_casa = maHome, gols_vis = maAway)
+  const pHomeWin   = pct((h,a)=> h.gols_casa > a.gols_vis);
+  const pDraw      = pct((h,a)=> h.gols_casa === a.gols_vis);
+  const pAwayWin   = pct((h,a)=> h.gols_casa < a.gols_vis);
+
+  // Double Chance
+  const pDC1X      = pct((h,a)=> h.gols_casa >= a.gols_vis);   // Casa ou Empate
+  const pDCX2      = pct((h,a)=> h.gols_casa <= a.gols_vis);   // Fora ou Empate
+  const pDC12      = pct((h,a)=> h.gols_casa !== a.gols_vis);  // Casa ou Fora (sem empate)
+
+  // Handicap Resultado (-1, -0.5, +0.5, +1)
+  const pHC_hm1    = pct((h,a)=> h.gols_casa - a.gols_vis > 1);   // Casa -1 (vence por 2+)
+  const pHC_hm05   = pct((h,a)=> h.gols_casa > a.gols_vis);        // Casa -0.5 = Casa vence
+  const pHC_hp05   = pct((h,a)=> h.gols_casa >= a.gols_vis);       // Casa +0.5 = Casa não perde
+  const pHC_hp1    = pct((h,a)=> h.gols_casa - a.gols_vis >= -1);  // Casa +1 = não perde por 2+
+  const pHC_am05   = pct((h,a)=> a.gols_vis > h.gols_casa);        // Fora -0.5 = Fora vence
+  const pHC_ap05   = pct((h,a)=> a.gols_vis >= h.gols_casa);       // Fora +0.5 = Fora não perde
+
+  // 1° Tempo resultado
+  const homeGolsPT  = (h,a)=> h.Gols_C_PT;
+  const awayGolsPT  = (h,a)=> a.Gols_V_PT;
+  const pH1TWin    = pct((h,a)=> h.Gols_C_PT > a.Gols_V_PT);
+  const pH1TDraw   = pct((h,a)=> h.Gols_C_PT === a.Gols_V_PT);
+  const pH1TAway   = pct((h,a)=> h.Gols_C_PT < a.Gols_V_PT);
+  const pH1TOver05 = pct((h,a)=> h.Gols_C_PT + a.Gols_V_PT > 0.5);
+  const pH1TUnder05= pct((h,a)=> h.Gols_C_PT + a.Gols_V_PT === 0);
+  const pH1TDC1X   = pct((h,a)=> h.Gols_C_PT >= a.Gols_V_PT);
+  const pH1TDCX2   = pct((h,a)=> h.Gols_C_PT <= a.Gols_V_PT);
+
+  return `
+    <div class="ma-market-section">
+      <div class="ma-market-title">🏆 RESULTADO FINAL (1X2)</div>
+      <div class="hc-grid">
+        ${hcCard('Resultado FT', `1 — ${maHome}`, pHomeWin, `Venceu em casa em <span>${H.pctBTTS_own}%</span> dos jogos`, 0.0)}
+        ${hcCard('Resultado FT', `X — Empate`, pDraw, `Empates em casa do ${maHome}: <span>${Math.round(homeGames.filter(d=>d.gols_casa===d.gols_vis).length/homeGames.length*100)}%</span>`, 0.05)}
+        ${hcCard('Resultado FT', `2 — ${maAway}`, pAwayWin, `Venceu fora em <span>${Math.round(awayGames.filter(d=>d.gols_vis>d.gols_casa).length/awayGames.length*100)}%</span>`, 0.1)}
+      </div>
+    </div>
+
+    <div class="ma-market-section">
+      <div class="ma-market-title">🔀 DOUBLE CHANCE</div>
+      <div class="hc-grid">
+        ${hcCard('Double Chance', `1X — Casa ou Empate`, pDC1X, `${maHome} não perde em <span>${pDC1X}%</span> das combinações`, 0.0)}
+        ${hcCard('Double Chance', `X2 — Fora ou Empate`, pDCX2, `${maAway} não perde em <span>${pDCX2}%</span> das combinações`, 0.05)}
+        ${hcCard('Double Chance', `12 — Casa ou Fora`, pDC12, `Jogo com resultado definido — sem empate`, 0.1)}
+      </div>
+    </div>
+
+    <div class="ma-market-section">
+      <div class="ma-market-title">⚖️ HANDICAP ASIÁTICO — RESULTADO</div>
+      <div class="hc-grid">
+        ${hcCard('Handicap', `${maHome} -1`, pHC_hm1,  `Casa vence por 2+ gols`, 0.0)}
+        ${hcCard('Handicap', `${maHome} -0.5`, pHC_hm05,`Casa vence por qualquer margem`, 0.05)}
+        ${hcCard('Handicap', `${maHome} +0.5`, pHC_hp05,`Casa vence ou empata`, 0.1)}
+        ${hcCard('Handicap', `${maHome} +1`,   pHC_hp1, `Casa não perde por 2+`, 0.15)}
+        ${hcCard('Handicap', `${maAway} -0.5`, pHC_am05,`Fora vence por qualquer margem`, 0.2)}
+        ${hcCard('Handicap', `${maAway} +0.5`, pHC_ap05,`Fora vence ou empata`, 0.25)}
+      </div>
+    </div>
+
+    <div class="ma-market-section">
+      <div class="ma-market-title">⏱️ RESULTADO 1° TEMPO</div>
+      <div class="hc-grid">
+        ${hcCard('1° Tempo', `1 — ${maHome}`, pH1TWin,  `Casa vencendo no intervalo`, 0.0)}
+        ${hcCard('1° Tempo', `X — Empate`,    pH1TDraw, `Empate no intervalo (mais comum)`, 0.05)}
+        ${hcCard('1° Tempo', `2 — ${maAway}`, pH1TAway, `Fora vencendo no intervalo`, 0.1)}
+        ${hcCard('1° Tempo', `1X — Casa ou Empate`, pH1TDC1X, `Casa não perde o 1°T`, 0.15)}
+        ${hcCard('1° Tempo', `X2 — Fora ou Empate`, pH1TDCX2, `Fora não perde o 1°T`, 0.2)}
+        ${hcCard('1° Tempo', `Over 0.5 gols`, pH1TOver05,`Pelo menos 1 gol no 1°T`, 0.25)}
+        ${hcCard('1° Tempo', `0-0 no intervalo`, pH1TUnder05, `1°T termina sem gols`, 0.3)}
+      </div>
+    </div>
+  `;
+}
+
+// ===== PADRÕES AVANÇADOS =====
+let padCurrentTeam = null;
+let padContext = 'casa';
+
+function setPadContext(ctx) {
+  padContext = ctx;
+  ['casa','fora','todos'].forEach(k => {
+    const btn = document.getElementById('pad-ctx-'+k);
+    if (btn) { btn.classList.toggle('active', k===ctx); btn.setAttribute('aria-pressed', k===ctx); }
+  });
+  if (padCurrentTeam) renderPadroes(padCurrentTeam);
+}
+
+function padShowDropdown() {
+  padFilterDropdown(document.getElementById('pad-search').value.trim());
+}
+
+function padFilterDropdown(q) {
+  const dd = document.getElementById('pad-dropdown');
+  const teams = getAllTeams().filter(t => !q || t.toLowerCase().includes(q.toLowerCase()));
+  if (!teams.length) { dd.style.display='none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = teams.slice(0,15).map(t => {
+    const n = data.filter(d=>d.casa===t||d.vis===t).length;
+    return `<div class="scout-dropdown-item" onclick="padSelectTeam('${t.replace(/'/g,"\\'")}')">${t}<span class="scout-dropdown-badge">${n}j</span></div>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#pad-search') && !e.target.closest('#pad-dropdown')) {
+    const dd = document.getElementById('pad-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
+function padSelectTeam(team) {
+  padCurrentTeam = team;
+  document.getElementById('pad-search').value = team;
+  const dd = document.getElementById('pad-dropdown');
+  if (dd) dd.style.display = 'none';
+  renderPadroes(team);
+}
+
+function renderPadroes(team) {
+  const ph = document.getElementById('pad-placeholder');
+  const res = document.getElementById('pad-result');
+  ph.style.display = 'none'; res.style.display = 'block';
+
+  let jogos;
+  if (padContext === 'casa')   jogos = data.filter(d=>d.casa===team);
+  else if (padContext === 'fora') jogos = data.filter(d=>d.vis===team);
+  else jogos = data.filter(d=>d.casa===team||d.vis===team);
+
+  if (jogos.length < 2) {
+    res.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">Dados insuficientes para este contexto.</div>`;
+    return;
+  }
+
+  const isHome = d => d.casa === team;
+  const gF  = d => isHome(d) ? d.gols_casa : d.gols_vis;   // gols feitos
+  const gS  = d => isHome(d) ? d.gols_vis  : d.gols_casa;  // gols sofridos
+  const gFPT= d => isHome(d) ? d.Gols_C_PT : d.Gols_V_PT;
+  const gFST= d => isHome(d) ? d.Gols_C_ST : d.Gols_V_ST;
+  const gSPT= d => isHome(d) ? d.Gols_V_PT : d.Gols_C_PT;
+  const gSST= d => isHome(d) ? d.Gols_V_ST : d.Gols_C_ST;
+
+  const THRESH = 0.65; // 65% para padrões avançados
+  const patterns = [];
+
+  const n = jogos.length;
+  const pct = (num) => Math.round(num/n*100);
+  const strength = (p) => p >= 80 ? 'strong' : 'moderate';
+
+  // ── SE marcou no 1°T → o que acontece no resto? ──
+  const marcouPT    = jogos.filter(d=>gFPT(d)>=1);
+  const naoMarcouPT = jogos.filter(d=>gFPT(d)===0);
+
+  if (marcouPT.length >= 2) {
+    const m = marcouPT.length;
+    const venceuFT  = marcouPT.filter(d=>gF(d)>gS(d)).length;
+    const over25    = marcouPT.filter(d=>gF(d)+gS(d)>=3).length; // inclui gols sofridos
+    // total gols do jogo quando marcou no 1T
+    const totalGols = marcouPT.filter(d=>gF(d)+gS(d)>=3).length;
+    const continuouST = marcouPT.filter(d=>gFST(d)>=1).length;
+
+    if (venceuFT/m >= THRESH) patterns.push({
+      trigger: `Marcou no 1° Tempo`,
+      then: `Resultado Final`,
+      text: `Quando <strong>${team}</strong> marca no 1°T, vence o jogo em <strong>${pct(venceuFT/m*n/n*m)}% das vezes</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Venceu FT',v:Math.round(venceuFT/m*100)+'%', cls:'highlight'},
+        {l:'Over 2.5',v:Math.round(over25/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(venceuFT/m*100))
+    });
+
+    if (continuouST/m >= THRESH) patterns.push({
+      trigger: `Marcou no 1° Tempo`,
+      then: `Marcou no 2° Tempo também`,
+      text: `Quando <strong>${team}</strong> marca no 1°T, continua marcando no 2°T em <strong>${Math.round(continuouST/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Marcou 2°T',v:Math.round(continuouST/m*100)+'%', cls:'highlight'},
+      ], strength: strength(Math.round(continuouST/m*100))
+    });
+  }
+
+  if (naoMarcouPT.length >= 2) {
+    const m = naoMarcouPT.length;
+    const ficouSemGol  = naoMarcouPT.filter(d=>gF(d)===0).length;
+    const under25      = naoMarcouPT.filter(d=>gF(d)+gS(d)<=2).length;
+    const perdeuFT     = naoMarcouPT.filter(d=>gF(d)<gS(d)).length;
+
+    if (ficouSemGol/m >= THRESH) patterns.push({
+      trigger: `NÃO marcou no 1° Tempo`,
+      then: `Sem gols no jogo todo`,
+      text: `Quando <strong>${team}</strong> não marca no 1°T, termina o jogo sem marcar em <strong>${Math.round(ficouSemGol/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'0 gols FT',v:Math.round(ficouSemGol/m*100)+'%', cls:'highlight2'},
+        {l:'Under 2.5',v:Math.round(under25/m*100)+'%', cls:'highlight'},
+      ], strength: strength(Math.round(ficouSemGol/m*100))
+    });
+
+    if (under25/m >= THRESH) patterns.push({
+      trigger: `NÃO marcou no 1° Tempo`,
+      then: `Jogo de baixo volume`,
+      text: `Quando <strong>${team}</strong> não marca no 1°T, o jogo fica Under 2.5 em <strong>${Math.round(under25/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Under 2.5',v:Math.round(under25/m*100)+'%', cls:'highlight'},
+        {l:'Perdeu',v:Math.round(perdeuFT/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(under25/m*100))
+    });
+  }
+
+  // ── SE sofreu no 1°T → o que acontece? ──
+  const sofreuPT    = jogos.filter(d=>gSPT(d)>=1);
+  const naoSofreuPT = jogos.filter(d=>gSPT(d)===0);
+
+  if (sofreuPT.length >= 2) {
+    const m = sofreuPT.length;
+    const virou     = sofreuPT.filter(d=>gF(d)>gS(d)).length;
+    const perdeuFT  = sofreuPT.filter(d=>gF(d)<gS(d)).length;
+    const over25    = sofreuPT.filter(d=>gF(d)+gS(d)>=3).length;
+
+    if (perdeuFT/m >= THRESH) patterns.push({
+      trigger: `Sofreu gol no 1° Tempo`,
+      then: `Resultado Final`,
+      text: `Quando <strong>${team}</strong> sofre no 1°T, acaba perdendo o jogo em <strong>${Math.round(perdeuFT/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Perdeu',v:Math.round(perdeuFT/m*100)+'%', cls:'highlight2'},
+        {l:'Virou',v:Math.round(virou/m*100)+'%', cls:'highlight'},
+        {l:'Over 2.5',v:Math.round(over25/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(perdeuFT/m*100))
+    });
+
+    if (over25/m >= THRESH) patterns.push({
+      trigger: `Sofreu gol no 1° Tempo`,
+      then: `Jogo de alto volume`,
+      text: `Quando <strong>${team}</strong> sofre no 1°T, o jogo termina Over 2.5 em <strong>${Math.round(over25/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Over 2.5',v:Math.round(over25/m*100)+'%', cls:'highlight'},
+        {l:'BTTS',v:Math.round(sofreuPT.filter(d=>gF(d)>=1&&gS(d)>=1).length/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(over25/m*100))
+    });
+  }
+
+  if (naoSofreuPT.length >= 2) {
+    const m = naoSofreuPT.length;
+    const cleanSheet = naoSofreuPT.filter(d=>gS(d)===0).length;
+    const venceuFT   = naoSofreuPT.filter(d=>gF(d)>gS(d)).length;
+    const under25    = naoSofreuPT.filter(d=>gF(d)+gS(d)<=2).length;
+
+    if (cleanSheet/m >= THRESH) patterns.push({
+      trigger: `NÃO sofreu no 1° Tempo`,
+      then: `Clean Sheet no jogo`,
+      text: `Quando <strong>${team}</strong> não sofre no 1°T, mantém o clean sheet em <strong>${Math.round(cleanSheet/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Clean Sheet',v:Math.round(cleanSheet/m*100)+'%', cls:'highlight'},
+        {l:'Venceu',v:Math.round(venceuFT/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(cleanSheet/m*100))
+    });
+
+    if (under25/m >= THRESH) patterns.push({
+      trigger: `NÃO sofreu no 1° Tempo`,
+      then: `Jogo de baixo volume`,
+      text: `Quando <strong>${team}</strong> não sofre no 1°T, o jogo fica Under 2.5 em <strong>${Math.round(under25/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Under 2.5',v:Math.round(under25/m*100)+'%', cls:'highlight'},
+        {l:'Venceu',v:Math.round(venceuFT/m*100)+'%', cls:'highlight2'},
+      ], strength: strength(Math.round(under25/m*100))
+    });
+  }
+
+  // ── Empate no 1°T → o que acontece? ──
+  const empatePT = jogos.filter(d=>gFPT(d)===gSPT(d));
+  if (empatePT.length >= 2) {
+    const m = empatePT.length;
+    const empateFT = empatePT.filter(d=>gF(d)===gS(d)).length;
+    const under25  = empatePT.filter(d=>gF(d)+gS(d)<=2).length;
+    const over25   = empatePT.filter(d=>gF(d)+gS(d)>=3).length;
+
+    if (empateFT/m >= THRESH) patterns.push({
+      trigger: `Empate no intervalo`,
+      then: `Resultado Final`,
+      text: `Quando o 1°T termina empatado, o jogo todo também empata em <strong>${Math.round(empateFT/m*100)}%</strong>`,
+      stats: [
+        {l:'Ocorreu',v:m+'x', cls:'highlight3'},
+        {l:'Empate FT',v:Math.round(empateFT/m*100)+'%', cls:'highlight3'},
+        {l:'Under 2.5',v:Math.round(under25/m*100)+'%', cls:'highlight'},
+      ], strength: strength(Math.round(empateFT/m*100))
+    });
+  }
+
+  // Histórico geral
+  const wins   = jogos.filter(d=>gF(d)>gS(d)).length;
+  const draws  = jogos.filter(d=>gF(d)===gS(d)).length;
+  const losses = jogos.filter(d=>gF(d)<gS(d)).length;
+  const over25All = jogos.filter(d=>gF(d)+gS(d)>=3).length;
+  const bttsAll   = jogos.filter(d=>gF(d)>=1&&gS(d)>=1).length;
+  const csAll     = jogos.filter(d=>gS(d)===0).length;
+
+  const ctxLabel = padContext==='casa'?'em casa':padContext==='fora'?'fora de casa':'em todos os jogos';
+
+  res.innerHTML = `
+    <div class="pad-team-header">
+      <div>
+        <div class="pad-team-name">${team}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">${n} jogos analisados · ${ctxLabel}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="scout-pill">✅ <strong>${wins}</strong>V · <strong>${draws}</strong>E · <strong>${losses}</strong>D</div>
+        <div class="scout-pill">📈 Over 2.5: <strong>${pct(over25All/n*n/n)}%</strong></div>
+        <div class="scout-pill">⚽ BTTS: <strong>${Math.round(bttsAll/n*100)}%</strong></div>
+        <div class="scout-pill">🛡️ Clean Sheet: <strong>${Math.round(csAll/n*100)}%</strong></div>
+      </div>
+    </div>
+
+    ${patterns.length ? `
+    <div class="pad-section">
+      <div class="pad-section-title">🔗 PADRÕES DETECTADOS — SE... ENTÃO...</div>
+      <div class="pad-grid">
+        ${patterns.map((p,i) => `
+          <div class="pad-card ${p.strength}" style="animation-delay:${i*0.05}s">
+            <span class="pad-trigger">SE: ${p.trigger}</span>
+            <span class="pad-then">ENTÃO: ${p.then}</span>
+            <div class="pad-text">${p.text}</div>
+            <div class="pad-stats">
+              ${p.stats.map(s=>`<div class="pad-stat-pill ${s.cls}"><span class="pv">${s.v}</span><span class="pl">${s.l}</span></div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : `<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Nenhum padrão com ≥65% encontrado para este contexto. Tente selecionar "Todos os jogos".</div>`}
+
+    <div class="pad-section" style="animation-delay:0.2s">
+      <div class="pad-section-title">📊 DETALHAMENTO POR PERÍODO</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+        ${[
+          ['⚽ Marcou no 1°T',      Math.round(jogos.filter(d=>gFPT(d)>=1).length/n*100)],
+          ['⚽ Marcou no 2°T',      Math.round(jogos.filter(d=>gFST(d)>=1).length/n*100)],
+          ['🥅 Sofreu no 1°T',      Math.round(jogos.filter(d=>gSPT(d)>=1).length/n*100)],
+          ['🥅 Sofreu no 2°T',      Math.round(jogos.filter(d=>gSST(d)>=1).length/n*100)],
+          ['0-0 no intervalo',       Math.round(jogos.filter(d=>gFPT(d)===0&&gSPT(d)===0).length/n*100)],
+          ['Vencendo no intervalo',  Math.round(jogos.filter(d=>gFPT(d)>gSPT(d)).length/n*100)],
+          ['Perdendo no intervalo',  Math.round(jogos.filter(d=>gFPT(d)<gSPT(d)).length/n*100)],
+          ['Virou o resultado',      Math.round(jogos.filter(d=>gFPT(d)<gSPT(d)&&gF(d)>gS(d)||gFPT(d)>gSPT(d)&&gF(d)<gS(d)).length/n*100)],
+        ].map(([l,v])=>`
+          <div class="pad-card" style="padding:12px 14px;flex-direction:row;align-items:center;gap:12px;display:flex;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${v>=70?'var(--accent)':v>=50?'var(--accent3)':'var(--muted)'};min-width:56px;text-align:center;">${v}%</div>
+            <div>
+              <div style="font-size:13px;color:var(--text);font-weight:600;">${l}</div>
+              <div style="font-size:11px;color:var(--muted);">${Math.round(v/100*n)} de ${n} jogos</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${renderC10Backtest(team)}
+  `;
+}
+
+function renderC10Backtest(team) {
+  const jogosEmCasa   = data.filter(d=>d.casa===team);
+  const jogosForaCasa = data.filter(d=>d.vis===team);
+
+  const buildRows = (jogos, isHome) => jogos.map(d => {
+    const meuC10  = isHome ? d.C10_Casa : d.C10_Vis;
+    const oppC10  = isHome ? d.C10_Vis  : d.C10_Casa;
+    const totalC10 = d.C10_Casa + d.C10_Vis;
+    const bateu   = totalC10 <= 1; // Under 1.5 = 0 ou 1 canto total
+    const placar  = d.Placar_FT;
+    const adv     = isHome ? d.vis : d.casa;
+    return { jogo: d.Jogo, placar, adv, meuC10, oppC10, totalC10, bateu, isHome };
+  });
+
+  const casaRows = buildRows(jogosEmCasa, true);
+  const foraRows = buildRows(jogosForaCasa, false);
+
+  const casaHits  = casaRows.filter(r=>r.bateu).length;
+  const foraHits  = foraRows.filter(r=>r.bateu).length;
+  const totalHits = casaHits + foraHits;
+  const totalJogos= casaRows.length + foraRows.length;
+
+  const renderRow = (r, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;
+      background:${r.bateu?'rgba(0,229,160,0.05)':'rgba(255,77,109,0.04)'};
+      border:1px solid ${r.bateu?'rgba(0,229,160,0.2)':'rgba(255,77,109,0.15)'};
+      border-radius:10px;animation:fadeUp 0.3s ease both;animation-delay:${i*0.03}s">
+      <div style="font-size:18px">${r.bateu?'✅':'❌'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.jogo}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px;">Placar: ${r.placar}</div>
+      </div>
+      <div style="text-align:center;min-width:52px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${r.meuC10===0?'var(--muted)':'var(--accent4)'};">${r.meuC10}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">${r.isHome?'casa':'fora'}</div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);">+</div>
+      <div style="text-align:center;min-width:52px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${r.oppC10===0?'var(--muted)':'var(--accent2)'};">${r.oppC10}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">opon.</div>
+      </div>
+      <div style="text-align:center;min-width:60px;padding:6px 10px;border-radius:8px;
+        background:${r.bateu?'rgba(0,229,160,0.12)':'rgba(255,77,109,0.1)'};
+        border:1px solid ${r.bateu?'rgba(0,229,160,0.3)':'rgba(255,77,109,0.25)'}">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${r.bateu?'var(--accent)':'var(--accent2)'};">${r.totalC10}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">total</div>
+      </div>
+    </div>`;
+
+  const pctGeral = totalJogos ? Math.round(totalHits/totalJogos*100) : 0;
+  const pctCasa  = casaRows.length ? Math.round(casaHits/casaRows.length*100) : 0;
+  const pctFora  = foraRows.length ? Math.round(foraHits/foraRows.length*100) : 0;
+  const colorGeral = pctGeral>=70?'var(--accent)':pctGeral>=50?'var(--accent3)':'var(--accent2)';
+
+  return `
+    <div class="pad-section" style="animation-delay:0.3s">
+      <div class="pad-section-title">🚩 BACKTEST — UNDER 1.5 CANTOS NOS PRIMEIROS 10MIN</div>
+
+      <!-- Resumo geral -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🌍 Geral</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:${colorGeral}">${pctGeral}%</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${totalHits} de ${totalJogos} jogos</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏠 Em Casa</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:${pctCasa>=70?'var(--accent)':pctCasa>=50?'var(--accent3)':'var(--accent2)'}">${pctCasa}%</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${casaHits} de ${casaRows.length} jogos</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">✈️ Fora</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:${pctFora>=70?'var(--accent)':pctFora>=50?'var(--accent3)':'var(--accent2)'}">${pctFora}%</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${foraHits} de ${foraRows.length} jogos</div>
+        </div>
+      </div>
+
+      <!-- Legenda -->
+      <div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;color:var(--muted);flex-wrap:wrap;">
+        <span>✅ Under 1.5 bateu (0 ou 1 canto total)</span>
+        <span>❌ Não bateu (2+ cantos)</span>
+        <span style="color:var(--accent4)">Azul = cantos do time</span>
+        <span style="color:var(--accent2)">Vermelho = cantos do oponente</span>
+      </div>
+
+      ${casaRows.length ? `
+      <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;margin-top:14px;">
+        🏠 Jogos em Casa — ${casaHits}/${casaRows.length} bateram (${pctCasa}%)
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+        ${casaRows.map((r,i)=>renderRow(r,i)).join('')}
+      </div>` : ''}
+
+      ${foraRows.length ? `
+      <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;margin-top:6px;">
+        ✈️ Jogos Fora — ${foraHits}/${foraRows.length} bateram (${pctFora}%)
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${foraRows.map((r,i)=>renderRow(r,i+casaRows.length)).join('')}
+      </div>` : ''}
+    </div>
+  `;
+}
 
 function goToScout(team) {
-  const navItem = [...document.querySelectorAll('.nav-item')].find(el => el.textContent.includes('Scout'));
-  if (navItem) setView('scout', navItem);
-  selectScoutTeam(team);
-  document.getElementById('content').scrollTop = 0;
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('menu-toggle');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen);
+  btn.textContent = isOpen ? '✕' : '☰';
+  if (isOpen) sidebar.querySelector('.nav-item.active').focus();
 }
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
