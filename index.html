@@ -944,13 +944,77 @@
   .ma-stat-label { color: var(--muted); }
   .ma-stat-val   { font-weight: 700; color: var(--text); font-family: 'Bebas Neue', sans-serif; font-size: 16px; }
 
-  @media (max-width: 768px) {
-    .ma-team-selector { grid-template-columns: 1fr; gap: 10px; }
-    .ma-vs { display: none; }
-    .ma-grid { grid-template-columns: 1fr 1fr; }
-    .ma-team-stats-grid { grid-template-columns: 1fr; }
-    .ma-banner-teams { font-size: 20px; }
+  /* ===== FINALIZAÇÕES SCOUT TABLE ===== */
+  .fin-scout-wrap { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
+  .fin-scout-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px;
+    color: var(--accent3); margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,209,102,0.25);
+    display: flex; align-items: center; gap: 10px;
   }
+  .fin-scout-tabs {
+    display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .fin-scout-tab {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 600; padding: 6px 14px;
+    border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .fin-scout-tab.active {
+    background: rgba(255,209,102,0.12);
+    border-color: rgba(255,209,102,0.4);
+    color: var(--accent3);
+  }
+  .fin-scout-tab:hover { background: var(--border); color: var(--text); }
+
+  .fin-scout-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fin-scout-table-wrap { overflow-x: auto; }
+  .fin-scout-subtitle {
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .fin-scout-subtitle span { font-size: 14px; }
+
+  .fin-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .fin-table th {
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); padding: 6px 8px; text-align: center;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .fin-table th.left { text-align: left; }
+  .fin-table td {
+    padding: 8px 8px; border-bottom: 1px solid rgba(30,37,51,0.5);
+    text-align: center; transition: background 0.15s;
+  }
+  .fin-table td.match-name {
+    text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text); max-width: 130px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .fin-table td.placar { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--accent3); }
+  .fin-table tbody tr:hover td { background: rgba(255,209,102,0.04); }
+  .fin-table tbody tr:last-child td { border-bottom: none; }
+  .fin-table tfoot td {
+    font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+    border-top: 1px solid var(--border); border-bottom: none;
+    padding: 8px 8px; background: rgba(0,0,0,0.15);
+  }
+  .fin-table tfoot td.match-name { font-size: 11px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 700; }
+
+  .val-alvo { color: var(--accent3); font-weight: 700; }
+  .val-fora { color: var(--muted); }
+  .val-tot-alvo { color: var(--accent); }
+  .val-tot-fora { color: var(--accent4); }
+  .val-high { color: var(--accent) !important; }
+  .val-low  { color: var(--accent2) !important; }
+
+  @media (max-width: 768px) {
+    .fin-scout-tables { grid-template-columns: 1fr; }
+  }
+</style>
 
   /* ===== HANDICAP / DOUBLE CHANCE ===== */
   .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 10px; }
@@ -3429,9 +3493,145 @@ function renderScout(team) {
         <div class="scout-pill" style="color:var(--accent2);border-color:rgba(255,77,109,0.3)">📉 <strong>${underCount}</strong> UNDER</div>
       </div>
     </div>
+    ${renderFinScout(team, jogosEmCasa, jogosForaCasa)}
     ${casaEntries.length ? renderSection('🏠 EM CASA', casaEntries) : ''}
     ${foraEntries.length ? renderSection('✈️ FORA DE CASA', foraEntries) : ''}
     ${!totalEntries ? `<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">Nenhuma entrada com ≥${scoutThreshold}% encontrada. Tente reduzir o limiar de confiança.</div>` : ''}
+  `;
+}
+
+// ===== FINALIZAÇÕES SCOUT =====
+let finScoutPeriod = 'total'; // 'pt' | 'st' | 'total'
+
+function setFinScoutPeriod(p) {
+  finScoutPeriod = p;
+  ['pt','st','total'].forEach(k => {
+    const btn = document.getElementById('fin-scout-tab-'+k);
+    if (btn) btn.classList.toggle('active', k===p);
+  });
+  // Re-render só a parte interna das tabelas
+  const home = document.getElementById('fin-scout-home-body');
+  const away = document.getElementById('fin-scout-away-body');
+  if (home) home.innerHTML = window._finScoutHomeRows(p);
+  if (away) away.innerHTML = window._finScoutAwayRows(p);
+  // Atualiza footers
+  const homeFoot = document.getElementById('fin-scout-home-foot');
+  const awayFoot = document.getElementById('fin-scout-away-foot');
+  if (homeFoot) homeFoot.innerHTML = window._finScoutHomeFoot(p);
+  if (awayFoot) awayFoot.innerHTML = window._finScoutAwayFoot(p);
+}
+
+function renderFinScout(team, jogosEmCasa, jogosForaCasa) {
+  if (!jogosEmCasa.length && !jogosForaCasa.length) return '';
+
+  // Helpers
+  const color = (v, thHigh=4, thLow=1) =>
+    v >= thHigh ? ' val-high' : v <= thLow ? ' val-low' : '';
+
+  const buildRowData = (jogos, isHome) => jogos.map(d => {
+    const adv      = isHome ? d.vis : d.casa;
+    const placar   = d.Placar_FT;
+    // Feitas
+    const fOnPT  = isHome ? d.On_C_PT  : d.On_V_PT;
+    const fOffPT = isHome ? d.Off_C_PT : d.Off_V_PT;
+    const fOnST  = isHome ? d.On_C_ST  : d.On_V_ST;
+    const fOffST = isHome ? d.Off_C_ST : d.Off_V_ST;
+    // Sofridas
+    const sOnPT  = isHome ? d.On_V_PT  : d.On_C_PT;
+    const sOffPT = isHome ? d.Off_V_PT : d.Off_C_PT;
+    const sOnST  = isHome ? d.On_V_ST  : d.On_C_ST;
+    const sOffST = isHome ? d.Off_V_ST : d.Off_C_ST;
+    return { adv, placar, fOnPT, fOffPT, fOnST, fOffST, sOnPT, sOffPT, sOnST, sOffST };
+  });
+
+  const homeRows = buildRowData(jogosEmCasa, true);
+  const awayRows = buildRowData(jogosForaCasa, false);
+
+  const makeRows = (rows, period, side) => rows.map((r,i) => {
+    let fOn, fOff, sOn, sOff;
+    if (period === 'pt')    { fOn=r.fOnPT; fOff=r.fOffPT; sOn=r.sOnPT; sOff=r.sOffPT; }
+    else if (period === 'st') { fOn=r.fOnST; fOff=r.fOffST; sOn=r.sOnST; sOff=r.sOffST; }
+    else { fOn=r.fOnPT+r.fOnST; fOff=r.fOffPT+r.fOffST; sOn=r.sOnPT+r.sOnST; sOff=r.sOffPT+r.sOffST; }
+    return `<tr>
+      <td class="match-name" title="${r.adv}">${r.adv}</td>
+      <td class="placar">${r.placar}</td>
+      <td class="val-alvo${color(fOn)}">${fOn}</td>
+      <td class="val-fora">${fOff}</td>
+      <td class="val-alvo${color(sOn)}">${sOn}</td>
+      <td class="val-fora">${sOff}</td>
+    </tr>`;
+  }).join('');
+
+  const makeFoot = (rows, period) => {
+    let fOnT=0, fOffT=0, sOnT=0, sOffT=0;
+    rows.forEach(r => {
+      if (period==='pt')      { fOnT+=r.fOnPT; fOffT+=r.fOffPT; sOnT+=r.sOnPT; sOffT+=r.sOffPT; }
+      else if (period==='st') { fOnT+=r.fOnST; fOffT+=r.fOffST; sOnT+=r.sOnST; sOffT+=r.sOffST; }
+      else { fOnT+=r.fOnPT+r.fOnST; fOffT+=r.fOffPT+r.fOffST; sOnT+=r.sOnPT+r.sOnST; sOffT+=r.sOffPT+r.sOffST; }
+    });
+    const n = rows.length || 1;
+    return `<tr>
+      <td class="match-name" colspan="2">TOTAL (${rows.length}j) · média</td>
+      <td class="val-tot-alvo">${fOnT} <span style="font-size:10px;color:var(--muted)">(${(fOnT/n).toFixed(1)})</span></td>
+      <td class="val-tot-fora">${fOffT} <span style="font-size:10px;color:var(--muted)">(${(fOffT/n).toFixed(1)})</span></td>
+      <td class="val-tot-alvo">${sOnT} <span style="font-size:10px;color:var(--muted)">(${(sOnT/n).toFixed(1)})</span></td>
+      <td class="val-tot-fora">${sOffT} <span style="font-size:10px;color:var(--muted)">(${(sOffT/n).toFixed(1)})</span></td>
+    </tr>`;
+  };
+
+  // Expose row builders for tab switching
+  window._finScoutHomeRows = p => makeRows(homeRows, p, 'home');
+  window._finScoutAwayRows = p => makeRows(awayRows, p, 'away');
+  window._finScoutHomeFoot = p => makeFoot(homeRows, p);
+  window._finScoutAwayFoot = p => makeFoot(awayRows, p);
+
+  const tableHeader = `
+    <thead><tr>
+      <th class="left">Adversário</th>
+      <th>Placar</th>
+      <th>🎯 Alvo</th>
+      <th>💨 Fora</th>
+      <th>🥅 Alvo</th>
+      <th>💨 Fora</th>
+    </tr>
+    <tr>
+      <th class="left" colspan="2" style="padding-top:2px;padding-bottom:6px;"></th>
+      <th colspan="2" style="color:var(--accent3);padding-top:2px;padding-bottom:6px;font-size:9px;">FEITAS</th>
+      <th colspan="2" style="color:var(--accent2);padding-top:2px;padding-bottom:6px;font-size:9px;">SOFRIDAS</th>
+    </tr></thead>`;
+
+  finScoutPeriod = 'total';
+
+  return `
+    <div class="fin-scout-wrap">
+      <div class="fin-scout-title">🎯 FINALIZAÇÕES — HISTÓRICO POR JOGO</div>
+      <div class="fin-scout-tabs">
+        <span style="font-size:11px;color:var(--muted);align-self:center;text-transform:uppercase;letter-spacing:1px;">Período:</span>
+        <button class="fin-scout-tab" id="fin-scout-tab-pt"    onclick="setFinScoutPeriod('pt')">1° Tempo</button>
+        <button class="fin-scout-tab" id="fin-scout-tab-st"    onclick="setFinScoutPeriod('st')">2° Tempo</button>
+        <button class="fin-scout-tab active" id="fin-scout-tab-total" onclick="setFinScoutPeriod('total')">Total</button>
+      </div>
+      <div class="fin-scout-tables">
+        ${jogosEmCasa.length ? `
+        <div class="fin-scout-table-wrap">
+          <div class="fin-scout-subtitle"><span>🏠</span> Em Casa (${jogosEmCasa.length} jogos)</div>
+          <table class="fin-table">
+            ${tableHeader}
+            <tbody id="fin-scout-home-body">${makeRows(homeRows,'total','home')}</tbody>
+            <tfoot id="fin-scout-home-foot">${makeFoot(homeRows,'total')}</tfoot>
+          </table>
+        </div>` : ''}
+        ${jogosForaCasa.length ? `
+        <div class="fin-scout-table-wrap">
+          <div class="fin-scout-subtitle"><span>✈️</span> Fora de Casa (${jogosForaCasa.length} jogos)</div>
+          <table class="fin-table">
+            ${tableHeader}
+            <tbody id="fin-scout-away-body">${makeRows(awayRows,'total','away')}</tbody>
+            <tfoot id="fin-scout-away-foot">${makeFoot(awayRows,'total')}</tfoot>
+          </table>
+        </div>` : ''}
+      </div>
+    </div>
   `;
 }
 
