@@ -1028,6 +1028,34 @@
   @media (max-width: 768px) {
     .fin-scout-tables { grid-template-columns: 1fr; }
   }
+
+  /* ===== BILHETE SUGERIDO ===== */
+  .bilhete-wrap {
+    margin-top: 28px; animation: fadeUp 0.4s ease both;
+    background: linear-gradient(135deg, rgba(255,209,102,0.06), rgba(0,229,160,0.03));
+    border: 1px solid rgba(255,209,102,0.3); border-radius: 18px; overflow: hidden;
+  }
+  .bilhete-header { display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid rgba(255,209,102,0.15); flex-wrap: wrap; }
+  .bilhete-icon { font-size: 30px; flex-shrink: 0; }
+  .bilhete-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--accent3); line-height: 1; }
+  .bilhete-sub { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 0.3px; }
+  .bilhete-copy-btn { margin-left: auto; background: rgba(255,209,102,0.12); border: 1px solid rgba(255,209,102,0.4); color: var(--accent3); font-size: 12px; font-weight: 700; padding: 8px 18px; border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+  .bilhete-copy-btn:hover { background: rgba(255,209,102,0.25); color: #fff; }
+  .bilhete-match { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--text); padding: 14px 22px 4px; text-align: center; }
+  .bilhete-linhas { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .bilhete-linha { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; animation: fadeUp 0.35s ease both; transition: border-color 0.2s; }
+  .bilhete-linha:hover { border-color: rgba(255,209,102,0.3); }
+  .bilhete-linha-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+  .bilhete-entrada { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; flex: 1; }
+  .bilhete-cat { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; background: rgba(255,209,102,0.1); color: var(--accent3); border: 1px solid rgba(255,209,102,0.25); white-space: nowrap; }
+  .bilhete-texto { font-size: 14px; font-weight: 700; color: var(--text); }
+  .bilhete-stars { font-size: 13px; }
+  .bilhete-conf { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .bilhete-razao { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+  .bilhete-bar { height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bilhete-aviso { font-size: 11px; color: var(--muted); text-align: center; padding: 10px 20px 16px; letter-spacing: 0.3px; }
+  .bilhete-section-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 12px 22px 4px; }
+
   /* ===== HANDICAP / DOUBLE CHANCE ===== */
   .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 10px; }
   .hc-card {
@@ -1515,6 +1543,7 @@
     </div>
 
   </div>
+</div>
 </div>
 
 <script>
@@ -4140,6 +4169,147 @@ function maCard(market, line, pct, badgeType, detail, delay=0) {
   </div>`;
 }
 
+// ===== GERADOR DE BILHETE =====
+let _bilheteTexto = '';
+
+function copiarBilhete() {
+  if (!_bilheteTexto) return;
+  const tryClipboard = () => {
+    const ta = document.createElement('textarea');
+    ta.value = _bilheteTexto;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,99999);
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    const btn = document.getElementById('bilhete-copy-btn');
+    if (btn) { btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar bilhete', 2500); }
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(_bilheteTexto).then(() => {
+      const btn = document.getElementById('bilhete-copy-btn');
+      if (btn) { btn.textContent = '✅ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar bilhete', 2500); }
+    }).catch(tryClipboard);
+  } else { tryClipboard(); }
+}
+
+function gerarBilhete(home, away, H, A, probs) {
+  const THRESH = 80;
+  const nJ = (n, tot) => n + ' de ' + tot + ' jogos';
+
+  // ── MERCADOS DA PARTIDA (combinados) ──
+  const mercadosPartida = [
+    { pct: probs.pOver15G,   cat:'⚽ Partida',     label:'Over 1.5 gols na partida',           raz: home+' em Over 1.5 em '+nJ(H.cntOver15,H.n)+' em casa · '+away+' em '+nJ(A.cntOver15,A.n)+' fora' },
+    { pct: probs.pOver25G,   cat:'⚽ Partida',     label:'Over 2.5 gols na partida',           raz: home+' em Over 2.5 em '+nJ(H.cntOver25,H.n)+' em casa · '+away+' em '+nJ(A.cntOver25,A.n)+' fora' },
+    { pct: probs.pOver35G,   cat:'⚽ Partida',     label:'Over 3.5 gols na partida',           raz: 'Jogos com 4+ gols — combinando o histórico dos dois times' },
+    { pct: probs.pUnder25G,  cat:'⚽ Partida',     label:'Under 2.5 gols na partida',          raz: home+' média '+((H.golsTot+H.sofTot)/2).toFixed(1)+' gols/j em casa · '+away+' média '+((A.golsTot+A.sofTot)/2).toFixed(1)+' fora' },
+    { pct: probs.pUnder35G,  cat:'⚽ Partida',     label:'Under 3.5 gols na partida',          raz: 'Tendência de jogo equilibrado — histórico combinado dos dois times' },
+    { pct: probs.pUnder45G,  cat:'⚽ Partida',     label:'Under 4.5 gols na partida',          raz: 'Baixo volume de gols esperado para o confronto' },
+    { pct: probs.pBTTS,      cat:'⚽ Partida',     label:'Ambos marcam — Sim',                 raz: home+' marcou em '+nJ(H.n,H.n)+' em casa · '+away+' marcou em '+nJ(A.n,A.n)+' fora' },
+    { pct: probs.pNoBTTS,    cat:'⚽ Partida',     label:'Ambos marcam — Não (um zerado)',     raz: home+' zerou adversário em '+nJ(H.cntCS,H.n)+' em casa · '+away+' em '+nJ(A.cntCS,A.n)+' fora' },
+    { pct: probs.pOver05PT,  cat:'⚽ Partida 1°T', label:'Pelo menos 1 gol no 1° Tempo',       raz: home+' marcou no 1°T em '+nJ(H.cntMarcouPT,H.n)+' em casa · '+away+' em '+nJ(A.cntMarcouPT,A.n)+' fora' },
+    { pct: probs.pOver15PT,  cat:'⚽ Partida 1°T', label:'Over 1.5 gols no 1° Tempo',          raz: 'Início de jogo muito movimentado nos dois times' },
+    { pct: probs.pUnder05PT, cat:'⚽ Partida 1°T', label:'Sem gols no 1° Tempo',               raz: home+' não marcou no 1°T em '+nJ(H.n-H.cntMarcouPT,H.n)+' em casa · '+away+' em '+nJ(A.n-A.cntMarcouPT,A.n)+' fora' },
+    { pct: probs.pCant75,    cat:'🚩 Partida',     label:'Over 7.5 escanteios na partida',     raz: home+' bate '+H.cantTot.toFixed(1)+'/j em casa · '+away+' bate '+A.cantTot.toFixed(1)+'/j fora' },
+    { pct: probs.pCant95,    cat:'🚩 Partida',     label:'Over 9.5 escanteios na partida',     raz: 'Alto volume de escanteios nos dois times combinados' },
+    { pct: probs.pCantU75,   cat:'🚩 Partida',     label:'Under 7.5 escanteios na partida',    raz: 'Baixo volume esperado de escanteios na partida' },
+    { pct: probs.pCantPT35,  cat:'🚩 Partida 1°T', label:'Over 3.5 escanteios no 1° Tempo',   raz: home+' bateu 3+ cantos no 1°T em '+nJ(H.cntCant3PT,H.n)+' em casa · '+away+' em '+nJ(A.cntCant3PT,A.n)+' fora' },
+    { pct: probs.pCantPT45,  cat:'🚩 Partida 1°T', label:'Over 4.5 escanteios no 1° Tempo',   raz: 'Altíssimo volume de cantos já no 1°T dos dois times' },
+    { pct: probs.pCantPTU3,  cat:'🚩 Partida 1°T', label:'Under 3.5 escanteios no 1° Tempo',  raz: home+' bateu menos de 3 cantos no 1°T em '+nJ(H.n-H.cntCant3PT,H.n)+' em casa' },
+    { pct: probs.pC10_15,    cat:'🚩 10 min',      label:'Over 1.5 cantos nos primeiros 10min',raz: home+' bateu canto nos 10min em '+nJ(H.cntC10,H.n)+' em casa · '+away+' em '+nJ(A.cntC10,A.n)+' fora' },
+    { pct: probs.pC10_25,    cat:'🚩 10 min',      label:'Over 2.5 cantos nos primeiros 10min',raz: 'Início de jogo muito movimentado nos cantos' },
+    { pct: probs.pC10U15,    cat:'🚩 10 min',      label:'Under 1.5 cantos nos primeiros 10min',raz: home+' sem canto nos 10min em '+nJ(H.n-H.cntC10,H.n)+' em casa · '+away+' em '+nJ(A.n-A.cntC10,A.n)+' fora' },
+    { pct: probs.pCard25,    cat:'🟨 Partida',     label:'Over 2.5 cartões na partida',        raz: home+' média '+H.amTot.toFixed(1)+' amarelos/j em casa · '+away+' média '+A.amTot.toFixed(1)+' fora' },
+    { pct: probs.pCard35,    cat:'🟨 Partida',     label:'Over 3.5 cartões na partida',        raz: 'Confronto tende a ser muito disputado e intenso' },
+    { pct: probs.pCardU25,   cat:'🟨 Partida',     label:'Under 2.5 cartões na partida',       raz: 'Jogo tende a ser disciplinado — média combinada baixa' },
+  ].filter(e => e.pct !== null && e.pct >= THRESH).sort((a,b) => b.pct - a.pct);
+
+  // ── MERCADOS POR TIME ISOLADO ──
+  const homeGames = data.filter(d => d.casa === home);
+  const awayGames = data.filter(d => d.vis  === away);
+  const nh = homeGames.length, na = awayGames.length;
+  const pH = (fn) => nh ? Math.round(homeGames.filter(fn).length/nh*100) : 0;
+  const pA = (fn) => na ? Math.round(awayGames.filter(fn).length/na*100) : 0;
+  const cH = (fn) => homeGames.filter(fn).length;
+  const cA = (fn) => awayGames.filter(fn).length;
+
+  const mercadosTime = [];
+  const addH = (pct, cat, label, raz) => { if (pct >= THRESH) mercadosTime.push({pct, cat: cat+' '+home, label, raz}); };
+  const addA = (pct, cat, label, raz) => { if (pct >= THRESH) mercadosTime.push({pct, cat: cat+' '+away, label, raz}); };
+
+  addH(pH(d=>d.Gols_C_PT>=1),  '⚽', home+' marca no 1° Tempo',            'Aconteceu em '+nJ(cH(d=>d.Gols_C_PT>=1),nh)+' em casa');
+  addH(pH(d=>d.Gols_C_ST>=1),  '⚽', home+' marca no 2° Tempo',            'Aconteceu em '+nJ(cH(d=>d.Gols_C_ST>=1),nh)+' em casa');
+  addH(pH(d=>d.Gols_V_PT===0), '🛡️', home+' não sofre no 1° Tempo',        'Aconteceu em '+nJ(cH(d=>d.Gols_V_PT===0),nh)+' em casa');
+  addH(pH(d=>d.Gols_V_ST===0), '🛡️', home+' não sofre no 2° Tempo',        'Aconteceu em '+nJ(cH(d=>d.Gols_V_ST===0),nh)+' em casa');
+  addH(pH(d=>d.On_C_PT>=4),    '🎯', home+' finaliza 4+ no alvo no 1°T',   'Aconteceu em '+nJ(cH(d=>d.On_C_PT>=4),nh)+' em casa');
+  addH(pH(d=>d.On_C_PT>=5),    '🎯', home+' finaliza 5+ no alvo no 1°T',   'Aconteceu em '+nJ(cH(d=>d.On_C_PT>=5),nh)+' em casa');
+  addH(pH(d=>d.Canto_C_PT>=2), '🚩', home+' bate 2+ escanteios no 1°T',   'Aconteceu em '+nJ(cH(d=>d.Canto_C_PT>=2),nh)+' em casa');
+  addH(pH(d=>d.Canto_C_PT>=3), '🚩', home+' bate 3+ escanteios no 1°T',   'Aconteceu em '+nJ(cH(d=>d.Canto_C_PT>=3),nh)+' em casa');
+  addH(pH(d=>d.C10_Casa>=1),   '🚩', home+' bate escanteio nos 10min',     'Aconteceu em '+nJ(cH(d=>d.C10_Casa>=1),nh)+' em casa');
+  addH(pH(d=>d.Amarelo_Casa_PT>=1),'🟨',home+' recebe amarelo no 1°T',    'Aconteceu em '+nJ(cH(d=>d.Amarelo_Casa_PT>=1),nh)+' em casa');
+  addH(pH(d=>d.Amarelo_Casa_ST>=1),'🟨',home+' recebe amarelo no 2°T',    'Aconteceu em '+nJ(cH(d=>d.Amarelo_Casa_ST>=1),nh)+' em casa');
+  addH(pH(d=>d.Amarelo_Casa_PT===0),'🛡️',home+' sem cartão no 1°T',       'Aconteceu em '+nJ(cH(d=>d.Amarelo_Casa_PT===0),nh)+' em casa');
+
+  addA(pA(d=>d.Gols_V_PT>=1),  '⚽', away+' marca no 1° Tempo',            'Aconteceu em '+nJ(cA(d=>d.Gols_V_PT>=1),na)+' fora de casa');
+  addA(pA(d=>d.Gols_V_ST>=1),  '⚽', away+' marca no 2° Tempo',            'Aconteceu em '+nJ(cA(d=>d.Gols_V_ST>=1),na)+' fora de casa');
+  addA(pA(d=>d.Gols_C_PT===0), '🛡️', away+' não sofre no 1° Tempo',        'Aconteceu em '+nJ(cA(d=>d.Gols_C_PT===0),na)+' fora de casa');
+  addA(pA(d=>d.Gols_C_ST===0), '🛡️', away+' não sofre no 2° Tempo',        'Aconteceu em '+nJ(cA(d=>d.Gols_C_ST===0),na)+' fora de casa');
+  addA(pA(d=>d.On_V_PT>=4),    '🎯', away+' finaliza 4+ no alvo no 1°T',   'Aconteceu em '+nJ(cA(d=>d.On_V_PT>=4),na)+' fora de casa');
+  addA(pA(d=>d.On_V_PT>=5),    '🎯', away+' finaliza 5+ no alvo no 1°T',   'Aconteceu em '+nJ(cA(d=>d.On_V_PT>=5),na)+' fora de casa');
+  addA(pA(d=>d.Canto_V_PT>=2), '🚩', away+' bate 2+ escanteios no 1°T',   'Aconteceu em '+nJ(cA(d=>d.Canto_V_PT>=2),na)+' fora de casa');
+  addA(pA(d=>d.Canto_V_PT>=3), '🚩', away+' bate 3+ escanteios no 1°T',   'Aconteceu em '+nJ(cA(d=>d.Canto_V_PT>=3),na)+' fora de casa');
+  addA(pA(d=>d.C10_Vis>=1),    '🚩', away+' bate escanteio nos 10min',     'Aconteceu em '+nJ(cA(d=>d.C10_Vis>=1),na)+' fora de casa');
+  addA(pA(d=>d.Amarelo_Vis_PT>=1),'🟨',away+' recebe amarelo no 1°T',     'Aconteceu em '+nJ(cA(d=>d.Amarelo_Vis_PT>=1),na)+' fora de casa');
+  addA(pA(d=>d.Amarelo_Vis_ST>=1),'🟨',away+' recebe amarelo no 2°T',     'Aconteceu em '+nJ(cA(d=>d.Amarelo_Vis_ST>=1),na)+' fora de casa');
+  addA(pA(d=>d.Amarelo_Vis_PT===0),'🛡️',away+' sem cartão no 1°T',        'Aconteceu em '+nJ(cA(d=>d.Amarelo_Vis_PT===0),na)+' fora de casa');
+
+  mercadosTime.sort((a,b) => b.pct - a.pct);
+
+  if (!mercadosPartida.length && !mercadosTime.length) {
+    return '<div class="bilhete-wrap"><div class="bilhete-header"><span class="bilhete-icon">🎫</span><div><div class="bilhete-title">BILHETE SUGERIDO</div><div class="bilhete-sub">Nenhuma entrada com ≥'+THRESH+'% encontrada para este confronto</div></div></div></div>';
+  }
+
+  // Build copy text
+  _bilheteTexto = '🎫 BILHETE — '+home+' x '+away+'\n\n';
+  if (mercadosPartida.length) {
+    _bilheteTexto += '📊 MERCADOS DA PARTIDA\n';
+    mercadosPartida.forEach((e,i) => { _bilheteTexto += (i+1)+'. '+e.label+'\n   └ '+e.raz+'\n'; });
+  }
+  if (mercadosTime.length) {
+    _bilheteTexto += '\n👤 MERCADOS POR TIME\n';
+    mercadosTime.forEach((e,i) => { _bilheteTexto += (i+1)+'. '+e.label+'\n   └ '+e.raz+'\n'; });
+  }
+  _bilheteTexto += '\n⚠️ Aposte com responsabilidade.';
+  _bilheteTexto = _bilheteTexto.replace(/\\n/g,'\n');
+
+  const renderLinha = (e, i) => {
+    const col = e.pct >= 92 ? 'var(--accent)' : e.pct >= 85 ? 'var(--accent3)' : 'var(--accent4)';
+    const stars = e.pct >= 92 ? '⭐⭐' : e.pct >= 85 ? '⭐' : '';
+    return '<div class="bilhete-linha" style="animation-delay:'+(i*0.05)+'s">'+
+      '<div class="bilhete-linha-top"><div class="bilhete-entrada">'+
+      '<span class="bilhete-cat">'+e.cat+'</span>'+
+      '<span class="bilhete-texto">'+e.label+'</span>'+
+      (stars ? '<span class="bilhete-stars">'+stars+'</span>' : '')+
+      '</div></div>'+
+      '<div class="bilhete-razao">'+e.raz+'</div>'+
+      '<div class="bilhete-bar"><div style="width:'+e.pct+'%;height:100%;background:'+col+';border-radius:3px;transition:width 0.8s ease;"></div></div>'+
+      '</div>';
+  };
+
+  const total = mercadosPartida.length + mercadosTime.length;
+  return '<div class="bilhete-wrap">'+
+    '<div class="bilhete-header">'+
+      '<span class="bilhete-icon">🎫</span>'+
+      '<div><div class="bilhete-title">BILHETE SUGERIDO</div>'+
+      '<div class="bilhete-sub">'+total+' entrada'+(total!==1?'s':'')+' com ≥'+THRESH+'% · ⭐ = ≥85% · ⭐⭐ = ≥92%</div></div>'+
+      '<button class="bilhete-copy-btn" id="bilhete-copy-btn" onclick="copiarBilhete()">📋 Copiar bilhete</button>'+
+    '</div>'+
+    '<div class="bilhete-match">'+home+' <span style="color:var(--muted);font-weight:400;font-size:14px">x</span> '+away+'</div>'+
+    (mercadosPartida.length ? '<div class="bilhete-section-label">📊 MERCADOS DA PARTIDA</div><div class="bilhete-linhas">'+mercadosPartida.map(renderLinha).join('')+'</div>' : '')+
+    (mercadosTime.length    ? '<div class="bilhete-section-label">👤 MERCADOS POR TIME</div><div class="bilhete-linhas">'+mercadosTime.map((e,i)=>renderLinha(e,mercadosPartida.length+i)).join('')+'</div>' : '')+
+    '<div class="bilhete-aviso">⚠️ Probabilidades baseadas em dados históricos. Aposte com responsabilidade.</div>'+
+  '</div>';
+}
+
 function runMatchAnalysis() {
   if (!maHome || !maAway) return;
   const ph = document.getElementById('ma-placeholder');
@@ -4333,6 +4503,16 @@ function runMatchAnalysis() {
 
     <!-- HANDICAP & DOUBLE CHANCE -->
     ${renderHandicap(H, A, f1)}
+
+    <!-- 🎫 BILHETE SUGERIDO -->
+    ${gerarBilhete(maHome, maAway, H, A, {
+      pOver15G, pOver25G, pOver35G, pUnder25G, pUnder35G, pUnder45G,
+      pBTTS, pNoBTTS,
+      pOver05PT, pOver15PT, pUnder05PT,
+      pCant75, pCant95, pCantPT35, pCantPT45, pCantPTU3, pCantU75,
+      pC10_15, pC10_25, pC10U15,
+      pCard25, pCard35, pCardU25,
+    })}
   `;
 }
 
