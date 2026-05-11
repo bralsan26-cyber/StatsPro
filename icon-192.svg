@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0c10"/>
+  <rect width="512" height="512" rx="96" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#111318"/>
+      <stop offset="100%" stop-color="#0a0c10"/>
+    </linearGradient>
+  </defs>
+  <!-- SP letters -->
+  <text x="256" y="200" font-family="Arial Black,sans-serif" font-weight="900"
+        font-size="180" fill="#00e5a0" text-anchor="middle" letter-spacing="-8">SP</text>
+  <!-- Divider line -->
+  <rect x="96" y="230" width="320" height="4" rx="2" fill="#1e2533"/>
+  <!-- Football Analytics text -->
+  <text x="256" y="310" font-family="Arial,sans-serif" font-weight="700"
+        font-size="48" fill="#5a6278" text-anchor="middle" letter-spacing="6">STATS</text>
+  <text x="256" y="370" font-family="Arial,sans-serif" font-weight="400"
+        font-size="36" fill="#2a3040" text-anchor="middle" letter-spacing="4">PRO</text>
+  <!-- Green accent bar bottom -->
+  <rect x="156" y="410" width="200" height="6" rx="3" fill="#00e5a0" opacity="0.6"/>
+</svg>
